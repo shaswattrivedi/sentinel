@@ -1,0 +1,682 @@
+openapi: 3.0.3
+info:
+  title: SENTINEL API
+  version: v1
+  description: AI-driven crowd safety and evacuation intelligence platform.
+servers:
+  - url: /api/v1
+security:
+  - BearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      summary: User login
+      description: Authenticate with email and password to obtain access and refresh tokens.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessAuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      description: Exchange a valid refresh token for new access and refresh tokens (rotation enforced).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Token refresh success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessAuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/signup:
+    post:
+      summary: Admin creates a new user
+      description: SUPER_ADMIN-only provisioning endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, role, organizationId]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                role:
+                  $ref: '#/components/schemas/UserRole'
+                organizationId:
+                  type: string
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessUserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/me:
+    get:
+      summary: Get current user profile
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessUserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/{id}:
+    get:
+      summary: Get user by ID (admin only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessUserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /sensors:
+    get:
+      summary: List sensors (building admin)
+      responses:
+        '200':
+          description: Sensors list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessSensorsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /sensors/{id}:
+    get:
+      summary: Get sensor by ID (building admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sensor detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessSensorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /risk/current:
+    get:
+      summary: Get current risk state
+      parameters:
+        - in: query
+          name: zoneId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Current risk state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessRiskCurrentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /risk/timeline:
+    get:
+      summary: Get risk timeline
+      parameters:
+        - in: query
+          name: start
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: end
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Risk timeline events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessRiskEventsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /risk/prediction:
+    get:
+      summary: Get risk prediction (mocked)
+      parameters:
+        - in: query
+          name: horizon
+          schema:
+            type: integer
+            default: 30
+        - in: query
+          name: zoneId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Risk prediction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessPredictionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /evacuation/routes:
+    get:
+      summary: Get evacuation routes
+      responses:
+        '200':
+          description: Available evacuation routes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEvacRoutesResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /evacuation/simulate:
+    post:
+      summary: Request evacuation simulation
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '202':
+          description: Simulation accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessSimulationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /alerts:
+    get:
+      summary: List alerts
+      responses:
+        '200':
+          description: Alerts list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessAlertsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /alerts/{id}/acknowledge:
+    post:
+      summary: Acknowledge an alert
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Alert acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessAckResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    UserRole:
+      type: string
+      enum: [SUPER_ADMIN, BUILDING_ADMIN, SAFETY_OFFICER, VIEW_ONLY]
+    ResponseMetadata:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        request_id:
+          type: string
+    ErrorBody:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: string
+          nullable: true
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        error:
+          $ref: '#/components/schemas/ErrorBody'
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/UserRole'
+        organizationId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    AuthToken:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+        user:
+          $ref: '#/components/schemas/User'
+    Sensor:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        location:
+          type: string
+    RiskEvent:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        zoneId:
+          type: string
+        riskScore:
+          type: number
+          format: float
+        riskState:
+          type: string
+          enum: [SAFE, WARNING, DANGER]
+        reason:
+          type: string
+    Prediction:
+      type: object
+      properties:
+        predictedCount:
+          type: integer
+        confidence:
+          type: number
+          format: float
+        timeWindow:
+          type: string
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [RISK_ESCALATION, PREDICTION]
+        severity:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        explanation:
+          type: string
+        acknowledged:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        source:
+          $ref: '#/components/schemas/RiskEvent'
+    SuccessEnvelope:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: object
+        metadata:
+          $ref: '#/components/schemas/ResponseMetadata'
+    SuccessAuthResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AuthToken'
+    SuccessUserResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/User'
+    SuccessSensorsResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                sensors:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Sensor'
+    SuccessSensorResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Sensor'
+    SuccessRiskCurrentResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                current:
+                  $ref: '#/components/schemas/RiskEvent'
+                  nullable: true
+    SuccessRiskEventsResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                events:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/RiskEvent'
+    SuccessPredictionResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                prediction:
+                  $ref: '#/components/schemas/Prediction'
+                  nullable: true
+                source:
+                  type: string
+                  example: live
+                  nullable: true
+    SuccessEvacRoutesResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                routes:
+                  type: array
+                  items:
+                    type: object
+    SuccessSimulationResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                simulation_id:
+                  type: string
+                status:
+                  type: string
+                  example: queued
+    SuccessAlertsResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                alerts:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Alert'
+    SuccessAckResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                alert:
+                  $ref: '#/components/schemas/Alert'
+
+  responses:
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            auth:
+              value:
+                status: error
+                error:
+                  code: AUTH_401
+                  message: Unauthorized
+    Forbidden:
+      description: User lacks permission for the requested action.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            forbidden:
+              value:
+                status: error
+                error:
+                  code: AUTH_403
+                  message: Forbidden
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            notFound:
+              value:
+                status: error
+                error:
+                  code: DATA_404
+                  message: Not found
+    Conflict:
+      description: Resource conflict.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            conflict:
+              value:
+                status: error
+                error:
+                  code: DATA_409
+                  message: Conflict
+    ValidationError:
+      description: Invalid request payload.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            validation:
+              value:
+                status: error
+                error:
+                  code: ML_422
+                  message: Validation failed
+    InternalError:
+      description: Unexpected server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            internal:
+              value:
+                status: error
+                error:
+                  code: SYS_500
+                  message: Internal server error
