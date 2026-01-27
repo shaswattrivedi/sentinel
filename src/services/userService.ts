@@ -1,6 +1,6 @@
-import { randomUUID } from "crypto";
 import { hashPassword, verifyPassword } from "../utils/password.js";
-import { User, UserRole } from "../types/users.js";
+import { UserRole } from "../types/users.js";
+import { UserModel, UserDoc } from "../models/user.js";
 
 interface PublicUser {
   id: string;
@@ -10,9 +10,22 @@ interface PublicUser {
   createdAt: Date;
 }
 
-const users = new Map<string, User>();
+type UserRecord = PublicUser & { passwordHash: string };
 
-const toPublicUser = (user: User): PublicUser => ({
+const toRecord = (user: UserDoc | (UserDoc & { _id: string }) | null): UserRecord | undefined => {
+  if (!user) return undefined;
+  const id = (user as UserDoc & { id?: string }).id ?? (user as { _id?: unknown })._id?.toString();
+  return {
+    id: id ?? "",
+    email: user.email,
+    passwordHash: (user as UserDoc).passwordHash,
+    role: user.role,
+    organizationId: user.organizationId,
+    createdAt: user.createdAt
+  };
+};
+
+const toPublicUser = (user: UserRecord): PublicUser => ({
   id: user.id,
   email: user.email,
   role: user.role,
@@ -22,39 +35,33 @@ const toPublicUser = (user: User): PublicUser => ({
 
 export const userService = {
   async createUser(email: string, password: string, role: UserRole, organizationId: string): Promise<PublicUser> {
-    const id = randomUUID();
-    const passwordHash = await hashPassword(password);
     const lowerEmail = email.toLowerCase();
-    for (const user of users.values()) {
-      if (user.email === lowerEmail) {
+    const passwordHash = await hashPassword(password);
+    try {
+      const user = await UserModel.create({ email: lowerEmail, passwordHash, role, organizationId });
+      const record = toRecord(user);
+      if (!record) throw new Error("Failed to create user");
+      return toPublicUser(record);
+    } catch (error: any) {
+      if (error?.code === 11000) {
         throw new Error("User already exists");
       }
+      throw error;
     }
-    const user: User = {
-      id,
-      email: lowerEmail,
-      passwordHash,
-      role,
-      organizationId,
-      createdAt: new Date()
-    };
-    users.set(id, user);
-    return toPublicUser(user);
   },
 
-  async findUserByEmail(email: string): Promise<User | undefined> {
+  async findUserByEmail(email: string): Promise<UserRecord | undefined> {
     const lower = email.toLowerCase();
-    for (const user of users.values()) {
-      if (user.email === lower) return user;
-    }
-    return undefined;
+    const doc = await UserModel.findOne({ email: lower }).lean();
+    return toRecord(doc as UserDoc | null);
   },
 
-  async findUserById(id: string): Promise<User | undefined> {
-    return users.get(id);
+  async findUserById(id: string): Promise<UserRecord | undefined> {
+    const doc = await UserModel.findById(id).lean();
+    return toRecord(doc as UserDoc | null);
   },
 
-  async verifyPassword(user: User, password: string): Promise<boolean> {
+  async verifyPassword(user: UserRecord, password: string): Promise<boolean> {
     return verifyPassword(password, user.passwordHash);
   },
 

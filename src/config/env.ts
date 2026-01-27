@@ -11,6 +11,10 @@ const number = (value: string | undefined, fallback: number): number => {
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   port: number(process.env.PORT, 4000),
+  mongo: {
+    uri: process.env.MONGODB_URI ?? "mongodb://localhost:27017",
+    dbName: process.env.MONGODB_DB ?? "sentinel"
+  },
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET ?? process.env.JWT_SECRET ?? "change-me",
     refreshSecret: process.env.JWT_REFRESH_SECRET ?? process.env.REFRESH_SECRET ?? "change-me-too",

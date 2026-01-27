@@ -23,6 +23,27 @@ type RefreshRecord = { userId: string; revoked: boolean };
 const refreshStore = new Map<string, RefreshRecord>();
 const userIndex = new Map<string, Set<string>>();
 
+const issueTokens = (user: {
+  id: string;
+  email: string;
+  role: UserRole;
+  organizationId: string;
+}) => {
+  const payload: AuthTokenPayload = {
+    userId: user.id,
+    role: user.role,
+    organizationId: user.organizationId,
+    email: user.email
+  };
+
+  const accessToken = signAccessToken(payload);
+  const jti = generateJti();
+  const refreshToken = signRefreshToken(payload, jti);
+  registerRefresh(jti, user.id);
+
+  return { accessToken, refreshToken };
+};
+
 const registerRefresh = (jti: string, userId: string) => {
   refreshStore.set(jti, { userId, revoked: false });
   if (!userIndex.has(userId)) userIndex.set(userId, new Set());
@@ -55,21 +76,15 @@ export const authService = {
     const user = await userService.findUserByEmail(email);
     if (!user) throw new HttpError(401, "AUTH_401", "Invalid credentials");
 
-    const valid = await userService.verifyPassword(user, password);
+    let valid = false;
+    try {
+      valid = await userService.verifyPassword(user, password);
+    } catch (error) {
+      throw new HttpError(500, "AUTH_500", "Password verification failed");
+    }
     if (!valid) throw new HttpError(401, "AUTH_401", "Invalid credentials");
 
-    const payload: AuthTokenPayload = {
-      userId: user.id,
-      role: user.role,
-      organizationId: user.organizationId,
-      email: user.email
-    };
-
-    const accessToken = signAccessToken(payload);
-    const jti = generateJti();
-    const refreshToken = signRefreshToken(payload, jti);
-    registerRefresh(jti, user.id);
-
+    const { accessToken, refreshToken } = issueTokens(user);
     return {
       accessToken,
       refreshToken,
@@ -95,21 +110,15 @@ export const authService = {
 
       const user = await userService.findUserById(userId);
       if (!user) throw new HttpError(401, "AUTH_401", "Invalid refresh token");
-
-      const payload: AuthTokenPayload = {
-        userId: user.id,
-        role: user.role,
-        organizationId: user.organizationId,
-        email: user.email
-      };
-
-      const newAccess = signAccessToken(payload);
-      const newJti = generateJti();
-      const newRefresh = signRefreshToken(payload, newJti);
+      const { accessToken: newAccess, refreshToken: newRefresh } = issueTokens(user);
 
       // rotate: revoke old, register new
       revokeJti(jti);
-      registerRefresh(newJti, user.id);
+      // new refresh already registered inside issueTokens; ensure old user index cleanup
+      // Add previous jti to index cleanup guard
+      const set = userIndex.get(user.id) ?? new Set<string>();
+      set.add(jti);
+      userIndex.set(user.id, set);
 
       return {
         accessToken: newAccess,
@@ -129,6 +138,23 @@ export const authService = {
     try {
       const user = await userService.createUser(email, password, role, organizationId);
       return user;
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("exists")) {
+        throw new HttpError(409, "DATA_409", "User already exists");
+      }
+      throw new HttpError(500, "SYS_500", "Failed to create user");
+    }
+  },
+
+  async signupSelf(email: string, password: string, organizationId: string): Promise<AuthResult> {
+    try {
+      const user = await userService.createUser(email, password, UserRole.VIEW_ONLY, organizationId);
+      const { accessToken, refreshToken } = issueTokens(user);
+      return {
+        accessToken,
+        refreshToken,
+        user
+      };
     } catch (error) {
       if (error instanceof Error && error.message.includes("exists")) {
         throw new HttpError(409, "DATA_409", "User already exists");

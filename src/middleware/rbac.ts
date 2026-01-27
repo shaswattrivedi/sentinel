@@ -1,18 +1,18 @@
 import { NextFunction, Response } from "express";
 import { HttpError } from "./errorHandler.js";
 import { RequestWithUser } from "./auth.js";
-import { Role } from "../types/auth.js";
+import { UserRole } from "../types/users.js";
 
 // Policy matrix per action.
-const policy: Record<string, Role[]> = {
-  "users:admin": ["SUPER_ADMIN"],
-  "sensors:read": ["SUPER_ADMIN", "BUILDING_ADMIN"],
-  "sensors:manage": ["SUPER_ADMIN", "BUILDING_ADMIN"],
-  "risk:read": ["SUPER_ADMIN", "BUILDING_ADMIN", "SAFETY_OFFICER", "VIEW_ONLY"],
-  "alerts:read": ["SUPER_ADMIN", "BUILDING_ADMIN", "SAFETY_OFFICER", "VIEW_ONLY"],
-  "alerts:ack": ["SUPER_ADMIN", "BUILDING_ADMIN", "SAFETY_OFFICER"],
-  "evacuation:read": ["SUPER_ADMIN", "BUILDING_ADMIN", "SAFETY_OFFICER", "VIEW_ONLY"],
-  "evacuation:simulate": ["SUPER_ADMIN", "BUILDING_ADMIN", "SAFETY_OFFICER"]
+const policy: Record<string, UserRole[]> = {
+  "users:admin": [UserRole.SUPER_ADMIN],
+  "sensors:read": [UserRole.SUPER_ADMIN, UserRole.BUILDING_ADMIN],
+  "sensors:manage": [UserRole.SUPER_ADMIN, UserRole.BUILDING_ADMIN],
+  "risk:read": [UserRole.SUPER_ADMIN, UserRole.BUILDING_ADMIN, UserRole.SAFETY_OFFICER, UserRole.VIEW_ONLY],
+  "alerts:read": [UserRole.SUPER_ADMIN, UserRole.BUILDING_ADMIN, UserRole.SAFETY_OFFICER, UserRole.VIEW_ONLY],
+  "alerts:ack": [UserRole.SUPER_ADMIN, UserRole.BUILDING_ADMIN, UserRole.SAFETY_OFFICER],
+  "evacuation:read": [UserRole.SUPER_ADMIN, UserRole.BUILDING_ADMIN, UserRole.SAFETY_OFFICER, UserRole.VIEW_ONLY],
+  "evacuation:simulate": [UserRole.SUPER_ADMIN, UserRole.BUILDING_ADMIN, UserRole.SAFETY_OFFICER]
 };
 
 export const requirePolicy = (action: keyof typeof policy) => (req: RequestWithUser, _res: Response, next: NextFunction) => {

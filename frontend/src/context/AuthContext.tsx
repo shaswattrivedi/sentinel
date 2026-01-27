@@ -11,6 +11,7 @@ type AuthContextValue = {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, organizationId: string) => Promise<void>;
   logout: () => void;
 };
 
@@ -51,6 +52,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(profile ?? null);
   }, []);
 
+  const signup = useCallback(async (email: string, password: string, organizationId: string) => {
+    const res = await api.post("/auth/signup/public", { email, password, organizationId });
+    const { access_token, refresh_token, user: profile } = res.data?.data ?? {};
+    if (access_token) localStorage.setItem(ACCESS_TOKEN_KEY, access_token);
+    if (refresh_token) localStorage.setItem(REFRESH_TOKEN_KEY, refresh_token);
+    setUser(profile ?? null);
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
@@ -58,8 +67,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, login, logout }),
-    [user, loading, login, logout]
+    () => ({ user, loading, login, signup, logout }),
+    [user, loading, login, signup, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

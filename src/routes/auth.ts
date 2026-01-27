@@ -23,6 +23,12 @@ const signupSchema = z.object({
   organizationId: z.string().min(1)
 });
 
+const publicSignupSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  organizationId: z.string().min(1)
+});
+
 export const router = Router();
 
 router.post("/login", async (req, res, next) => {
@@ -83,6 +89,26 @@ router.post("/signup", authenticate, requireRoles([UserRole.SUPER_ADMIN]), async
     if (existing) return next(new HttpError(409, "DATA_409", "User already exists"));
     const user = await authService.signup(parsed.data.email, parsed.data.password, parsed.data.role, parsed.data.organizationId);
     return res.status(201).json(success(req, { user }));
+  } catch (error) {
+    if (error instanceof HttpError) return next(error);
+    return next(new HttpError(500, "SYS_500", "Failed to create user"));
+  }
+});
+
+router.post("/signup/public", async (req, res, next) => {
+  const parsed = publicSignupSchema.safeParse(req.body);
+  if (!parsed.success) return next(new HttpError(422, "ML_422", "Invalid signup payload"));
+
+  try {
+    const result = await authService.signupSelf(parsed.data.email, parsed.data.password, parsed.data.organizationId);
+    return res.status(201).json(
+      success(req, {
+        access_token: result.accessToken,
+        refresh_token: result.refreshToken,
+        token_type: "Bearer",
+        user: result.user
+      })
+    );
   } catch (error) {
     if (error instanceof HttpError) return next(error);
     return next(new HttpError(500, "SYS_500", "Failed to create user"));
