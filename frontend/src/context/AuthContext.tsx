@@ -26,7 +26,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = useCallback(async () => {
     try {
-      const res = await api.get("/auth/profile");
+      // Node API exposes current user at /users/me (per OpenAPI), not /auth/profile
+      const res = await api.get("/users/me");
       setUser(res.data?.data ?? null);
     } catch (err) {
       setUser(null);

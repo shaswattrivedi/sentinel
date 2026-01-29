@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
+  // Default to the Node/Express API; override with VITE_API_BASE_URL if deployed elsewhere
   baseURL: import.meta.env.VITE_API_BASE_URL ?? "/api/v1"
 });
 

@@ -2,8 +2,8 @@ html, body {
   margin: 0;
   padding: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: #f5f6f8;
-  color: #111827;
+  background: #0b0a15;
+  color: #f8fafc;
 }
 
 * {
@@ -30,4 +30,105 @@ button:disabled {
 input {
   border: 1px solid #d1d5db;
   border-radius: 4px;
+}
+
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.05), transparent 25%),
+    radial-gradient(circle at 80% 0%, rgba(177, 158, 239, 0.12), transparent 30%),
+    #0b0a15;
+}
+
+.aurora-bg {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Glassmorphism card for forms */
+.glass-card {
+  background: rgba(11, 10, 21, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(177, 158, 239, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.glass-card h2 {
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+.glass-card input {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(177, 158, 239, 0.25);
+  color: #f8fafc;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.glass-card input:focus {
+  outline: none;
+  border-color: #B19EEF;
+  box-shadow: 0 0 0 3px rgba(177, 158, 239, 0.15);
+}
+
+.glass-card input::placeholder {
+  color: rgba(248, 250, 252, 0.5);
+}
+
+.glass-card button[type="submit"] {
+  background: linear-gradient(135deg, #B19EEF 0%, #7c6bbf 100%);
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.glass-card button[type="submit"]:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(177, 158, 239, 0.4);
+}
+
+.glass-card a {
+  color: #B19EEF;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.glass-card a:hover {
+  color: #ccc9dc;
+  text-decoration: underline;
+}
+
+.glass-card label div {
+  color: rgba(248, 250, 252, 0.85);
+  font-size: 0.875rem;
+}
+
+.error-message {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+@keyframes sentinel-skeleton {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }

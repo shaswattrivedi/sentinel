@@ -21,7 +21,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(
   cors({
-    origin: env.cors.allowedOrigins.length ? env.cors.allowedOrigins : undefined,
+    // Allow listed origins; if none provided, allow all for local/dev
+    origin: env.cors.allowedOrigins.length ? env.cors.allowedOrigins : true,
     credentials: true
   })
 );
