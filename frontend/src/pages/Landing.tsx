@@ -266,9 +266,9 @@ const Landing: React.FC = () => {
                   transition={{ duration: 0.25 }}
                   style={{
                     width: "100%",
-                    maxWidth: 460,
+                    maxWidth: 520,
                     height: 260,
-                    objectFit: "cover",
+                    objectFit: "contain",
                     borderRadius: 12,
                     boxShadow: "0 12px 30px rgba(0,0,0,0.4)",
                     background: "#0f0f1a"
