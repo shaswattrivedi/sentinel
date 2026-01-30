@@ -48,32 +48,32 @@ const Landing: React.FC = () => {
   const problemSlides = [
     {
       key: "overview",
-      heading: "The Problem",
-      body: "SENTINEL addresses crowd risk before it escalates.",
+      heading: "",
+      body: "The ROOT Cause - SENTINEL addresses crowd risk before it escalates.",
       image: problemInitial
     },
     {
       key: "stampedes",
-      heading: "Stampedes",
-      body: "~800 deaths/year; 2006–2019 saw 11,000+ fatalities.",
+      heading: "",
+      body: "STAMPEDES - Approx. 800 deaths/year; 2006–19 saw 11,000+ fatalities.",
       image: problemStampedes
     },
     {
       key: "injuries",
-      heading: "Rising injuries",
-      body: "India shows ~36% increase in injuries over 16 years.",
+      heading: "",
+      body: "INJURIES - India shows ~36% increase in injuries over 16 years.",
       image: problemInjuries
     },
     {
       key: "fire",
-      heading: "Fire disasters",
-      body: "15k–18k injuries and 3k–4k deaths annually.",
+      heading: "",
+      body: "FIRE DISASTERS - 15k–18k injuries and 3k–4k deaths annually.",
       image: problemFire
     },
     {
       key: "panic",
-      heading: "Panic cascades",
-      body: "Delays and crowd surges keep risk high without early action.",
+      heading: "",
+      body: "PANIC - Delays and crowd surges keep risk high without early action.",
       image: problemPanic
     }
   ];
@@ -147,14 +147,14 @@ const Landing: React.FC = () => {
       </nav>
 
       {/* Section 1 — Hero Title */}
-      <header style={{ marginBottom: 20, textAlign: "center" }}>
-        <div style={{ fontSize: 56, fontWeight: 800, letterSpacing: 1 }}>SENTINEL</div>
+      <header style={{ marginTop: 35, marginBottom: 35, textAlign: "center" }}>
+        <div style={{ fontSize: 65, fontWeight: 800, letterSpacing: 1 }}>SENTINEL</div>
       </header>
 
       {/* Section 3 — Project Identity + Vision Statement */}
       <section style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", textAlign: "center" }}>
-        <div style={{ fontSize: 32, fontWeight: 700 }}>What if evacuations were proactive, not reactive?</div>
-        <div style={{ color: "rgba(248, 250, 252, 0.8)", fontSize: 18, maxWidth: 720 }}>
+        <div style={{ fontSize: 40, fontWeight: 700 }}>What if evacuations were proactive, not reactive?</div>
+        <div style={{ color: "rgba(248, 250, 252, 0.8)", fontSize: 22, maxWidth: 720 }}>
           Protecting people with ML-driven, real-time evacuation intelligence — a silent assistant that prevents panic and reduces risk before it spreads.
         </div>
       </section>
@@ -163,7 +163,7 @@ const Landing: React.FC = () => {
 
       {/* Section 4 — Three Information Boxes */}
       <section id="product-section" style={{ display: "flex", flexDirection: "column", gap: 36 }}>
-        <div style={{ fontSize: 28, fontWeight: 800, textAlign: "center", marginBottom: 6 }}>Why Crowd Safety Fails?</div>
+        <div style={{ fontSize: 40, fontWeight: 800, textAlign: "center", marginBottom: 6 }}>Why Crowd Safety Fails?</div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
           {/* The Problem carousel with paired graph */}
@@ -195,8 +195,8 @@ const Landing: React.FC = () => {
                   onClick={prevProblem}
                   aria-label="Previous"
                   style={{
-                    width: 36,
-                    height: 36,
+                    width: 50,
+                    height: 50,
                     borderRadius: 8,
                     border: "1px solid rgba(177, 158, 239, 0.25)",
                     background: "rgba(255, 255, 255, 0.06)",
@@ -207,15 +207,15 @@ const Landing: React.FC = () => {
                     top: 0
                   }}
                 >
-                  <ChevronLeft size={18} />
+                  <ChevronLeft size={25} />
                 </button>
-                <div style={{ color: "#f8fafc", fontWeight: 900, fontSize: 58, letterSpacing: 1 }}>The Problem</div>
+                <div style={{ color: "#f8fafc", fontWeight: 900, fontSize: 40, letterSpacing: 1 }}>THE PROBLEM</div>
                 <button
                   onClick={nextProblem}
                   aria-label="Next"
                   style={{
-                    width: 36,
-                    height: 36,
+                    width: 50,
+                    height: 50,
                     borderRadius: 8,
                     border: "1px solid rgba(177, 158, 239, 0.25)",
                     background: "rgba(255, 255, 255, 0.06)",
@@ -226,7 +226,7 @@ const Landing: React.FC = () => {
                     top: 0
                   }}
                 >
-                  <ChevronRight size={18} />
+                  <ChevronRight size={25} />
                 </button>
               </div>
 
@@ -237,10 +237,10 @@ const Landing: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -12 }}
                   transition={{ duration: 0.25 }}
-                  style={{ color: "rgba(248, 250, 252, 0.85)", fontSize: 16, lineHeight: 1.6 }}
+                  style={{ color: "rgba(248, 250, 252, 0.85)", fontSize: 20, lineHeight: 3.0 }}
                 >
-                  <div style={{ fontWeight: 700, marginBottom: 6 }}>{problemSlides[problemIndex].heading}</div>
-                  <div>{problemSlides[problemIndex].body}</div>
+                  <div style={{ fontWeight: 700, marginBottom: 6 }}><center>{problemSlides[problemIndex].heading}</center></div>
+                  <div><center>{problemSlides[problemIndex].body}</center></div>
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -267,11 +267,12 @@ const Landing: React.FC = () => {
                   style={{
                     width: "100%",
                     maxWidth: 520,
-                    height: 260,
-                    objectFit: "contain",
+                    aspectRatio: "2 / 1",
+                    height: "auto",
+                    objectFit: "cover",
                     borderRadius: 12,
                     boxShadow: "0 12px 30px rgba(0,0,0,0.4)",
-                    background: "#0f0f1a"
+                    background: "transparent"
                   }}
                 />
               </AnimatePresence>
