@@ -8,6 +8,7 @@ import problemStampedes from "@/assets/problem-stampedes.png";
 import problemInjuries from "@/assets/problem-injuries.png";
 import problemFire from "@/assets/problem-fire.png";
 import problemPanic from "@/assets/problem-panic.png";
+import TextType from "@/components/TextType";
 
 const SectionDivider: React.FC = () => (
   <div
@@ -163,7 +164,17 @@ const Landing: React.FC = () => {
 
       {/* Section 4 — Three Information Boxes */}
       <section id="product-section" style={{ display: "flex", flexDirection: "column", gap: 36 }}>
-        <div style={{ fontSize: 40, fontWeight: 800, textAlign: "center", marginBottom: 6 }}>Why Crowd Safety Fails?</div>
+        <div style={{ fontSize: 40, fontWeight: 800, textAlign: "center", marginBottom: 6 }}>
+          <TextType
+            text={["Why Crowd Safety Fails?", "Why Crowd Safety Fails?", "Why Crowd Safety Fails?"]}
+            typingSpeed={70}
+            pauseDuration={7000}
+            deletingSpeed={70}
+            showCursor
+            cursorCharacter="_"
+            cursorBlinkDuration={0.6}
+          />
+        </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
           {/* The Problem carousel with paired graph */}
