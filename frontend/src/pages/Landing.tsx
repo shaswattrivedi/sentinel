@@ -8,7 +8,9 @@ import problemStampedes from "@/assets/problem-stampedes.png";
 import problemInjuries from "@/assets/problem-injuries.png";
 import problemFire from "@/assets/problem-fire.png";
 import problemPanic from "@/assets/problem-panic.png";
+import sentinelMain from "@/assets/sentinel-main.png";
 import TextType from "@/components/TextType";
+import ShinyText from "@/components/ShinyText";
 
 const SectionDivider: React.FC = () => (
   <div
@@ -68,7 +70,7 @@ const Landing: React.FC = () => {
     {
       key: "fire",
       heading: "",
-      body: "FIRE DISASTERS - 15k–18k injuries and 3k–4k deaths annually.",
+      body: "FIRE DISASTERS - 15000–18000 injuries and 3000–4000 deaths annually.",
       image: problemFire
     },
     {
@@ -84,21 +86,31 @@ const Landing: React.FC = () => {
   const prevProblem = () => setProblemIndex((prev) => (prev - 1 + problemSlides.length) % problemSlides.length);
 
   return (
-    <div id="top" style={{ maxWidth: 1200, margin: "0 auto", padding: "48px 20px 0", color: "#f8fafc", scrollBehavior: "smooth" }}>
-      {/* Section 2 — Navigation Bar switched with Header */}
+    <div id="top" style={{ color: "#f8fafc", scrollBehavior: "smooth" }}>
+      {/* Top Navigation Bar with brand */}
       <nav
         className="glass-card"
         style={{
-          padding: "14px 18px",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 20,
+          padding: "25px 32px",
           display: "flex",
           alignItems: "center",
+          justifyContent: "space-between",
           gap: 18,
           flexWrap: "wrap",
-          marginBottom: 28,
-          borderRadius: 14
+          borderRadius: 0,
+          borderBottom: "1px solid rgba(255,255,255,0.08)"
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+        <Link to="/" style={{ color: "#f8fafc", textDecoration: "none", fontSize: 50, fontWeight: 800, letterSpacing: 1 }}>
+          SENTINEL
+        </Link>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 18, marginLeft: "auto" }}>
           {[
             { label: "Home", action: () => scrollTo("top") },
             { label: "Product", action: () => scrollTo("product-section") },
@@ -109,68 +121,86 @@ const Landing: React.FC = () => {
               key={item.label}
               onClick={item.action}
               style={{
-                padding: "8px 14px",
+                padding: "11px 11px",
                 borderRadius: 8,
                 border: "1px solid rgba(177, 158, 239, 0.25)",
                 background: "rgba(255, 255, 255, 0.06)",
                 color: "#f8fafc",
                 cursor: "pointer",
                 fontWeight: 600,
+                fontSize: 15,
                 minWidth: 112
               }}
             >
               {item.label}
             </button>
           ))}
-        </div>
-        <div style={{ marginLeft: "auto" }}>
           <Link
             to={user ? "/dashboard" : "/login"}
             style={{
-              padding: "7px 14px",
+              padding: "11px 11px",
               borderRadius: 8,
               border: "1px solid rgba(177, 158, 239, 0.25)",
               background: "rgba(255, 255, 255, 0.06)",
               color: "#f8fafc",
               textDecoration: "none",
               fontWeight: 600,
-              minWidth: 132,
-              maxWidth: 160,
+              minWidth: 112,
               textAlign: "center",
               display: "inline-block",
-              fontSize: 14,
+              fontSize: 15,
               whiteSpace: "nowrap"
             }}
-          >
-            Login to Dashboard
-          </Link>
+          >Login to Dashboard</Link>
         </div>
       </nav>
 
-      {/* Section 1 — Hero Title */}
-      <header style={{ marginTop: 35, marginBottom: 35, textAlign: "center" }}>
-        <div style={{ fontSize: 65, fontWeight: 800, letterSpacing: 1 }}>SENTINEL</div>
-      </header>
+      {/* Spacer for fixed navbar */}
+      <div style={{ height: 89 }} />
 
-      {/* Section 3 — Project Identity + Vision Statement */}
-      <section style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", textAlign: "center" }}>
-        <div style={{ fontSize: 40, fontWeight: 700 }}>What if evacuations were proactive, not reactive?</div>
-        <div style={{ color: "rgba(248, 250, 252, 0.8)", fontSize: 22, maxWidth: 720 }}>
-          Protecting people with ML-driven, real-time evacuation intelligence — a silent assistant that prevents panic and reduces risk before it spreads.
+      <div style={{ maxWidth: 1350, margin: "0 auto", padding: "48px 20px 0" }}>
+        {/* Section 3 — Project Identity + Vision Statement */}
+        <section style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", textAlign: "center" }}>
+          <div style={{ fontSize: 48, fontWeight: 800, letterSpacing: 0.2 }}>
+            <ShinyText
+              text="What if evacuations were proactive, not reactive?"
+              speed={2.6}
+              spread={120}
+              color="rgba(248, 250, 252, 0.72)"
+              shineColor="#ffffff"
+              pauseOnHover
+              yoyo
+            />
+          </div>
+        </section>
+
+        <div style={{ display: "flex", justifyContent: "center", margin: "32px 0 48px" }}>
+          <img
+            src={sentinelMain}
+            alt="SENTINEL platform overview"
+            style={{
+              width: "100%",
+              maxWidth: 1000,
+              height: "auto",
+              borderRadius: 14,
+              boxShadow: "0 18px 38px rgba(0,0,0,0.45)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(255, 255, 255, 0.02)"
+            }}
+          />
         </div>
-      </section>
 
       <SectionDivider />
 
       {/* Section 4 — Three Information Boxes */}
       <section id="product-section" style={{ display: "flex", flexDirection: "column", gap: 36 }}>
-        <div style={{ fontSize: 40, fontWeight: 800, textAlign: "center", marginBottom: 6 }}>
+        <div style={{ fontSize: 48, fontWeight: 800, textAlign: "center", marginBottom: 12 }}>
           <TextType
             text={["Why Crowd Safety Fails?", "Why Crowd Safety Fails?", "Why Crowd Safety Fails?"]}
             typingSpeed={70}
             pauseDuration={7000}
             deletingSpeed={70}
-            showCursor
+            showCursor={false}
             cursorCharacter="_"
             cursorBlinkDuration={0.6}
           />
@@ -182,13 +212,14 @@ const Landing: React.FC = () => {
             style={{
               width: "100%",
               maxWidth: 1080,
-              alignSelf: "flex-start",
+              alignSelf: "center",
               display: "flex",
               flexWrap: "wrap",
-              gap: 20,
+              gap: 50,
               alignItems: "stretch"
             }}
-          >
+        >
+
             <div
               className="glass-card"
               style={{
@@ -248,7 +279,7 @@ const Landing: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -12 }}
                   transition={{ duration: 0.25 }}
-                  style={{ color: "rgba(248, 250, 252, 0.85)", fontSize: 20, lineHeight: 3.0 }}
+                  style={{ color: "rgba(248, 250, 252, 0.85)", fontSize: 22, lineHeight: 2.0 }}
                 >
                   <div style={{ fontWeight: 700, marginBottom: 6 }}><center>{problemSlides[problemIndex].heading}</center></div>
                   <div><center>{problemSlides[problemIndex].body}</center></div>
@@ -394,6 +425,7 @@ const Landing: React.FC = () => {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 };
