@@ -156,7 +156,7 @@ const Landing: React.FC = () => {
       </nav>
 
       {/* Spacer for fixed navbar */}
-      <div style={{ height: 89 }} />
+      <div style={{ height: 90 }} />
 
       <div style={{ maxWidth: 1350, margin: "0 auto", padding: "48px 20px 0" }}>
         {/* Section 3 — Project Identity + Vision Statement */}
@@ -174,13 +174,13 @@ const Landing: React.FC = () => {
           </div>
         </section>
 
-        <div style={{ display: "flex", justifyContent: "center", margin: "32px 0 48px" }}>
+        <div style={{ display: "flex", justifyContent: "left", margin: "32px 0 48px" }}>
           <img
             src={sentinelMain}
             alt="SENTINEL platform overview"
             style={{
               width: "100%",
-              maxWidth: 1000,
+              maxWidth: 590,
               height: "auto",
               borderRadius: 14,
               boxShadow: "0 18px 38px rgba(0,0,0,0.45)",
@@ -189,6 +189,8 @@ const Landing: React.FC = () => {
             }}
           />
         </div>
+
+        <div style={{ height: 240 }} />
 
       <SectionDivider />
 
