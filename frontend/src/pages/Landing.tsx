@@ -180,7 +180,7 @@ const Landing: React.FC = () => {
             alt="SENTINEL platform overview"
             style={{
               width: "100%",
-              maxWidth: 590,
+              maxWidth: 600,
               height: "auto",
               borderRadius: 14,
               boxShadow: "0 18px 38px rgba(0,0,0,0.45)",
