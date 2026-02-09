@@ -159,38 +159,94 @@ const Landing: React.FC = () => {
       <div style={{ height: 90 }} />
 
       <div style={{ maxWidth: 1350, margin: "0 auto", padding: "48px 20px 0" }}>
-        {/* Section 3 — Project Identity + Vision Statement */}
-        <section style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", textAlign: "center" }}>
-          <div style={{ fontSize: 48, fontWeight: 800, letterSpacing: 0.2 }}>
-            <ShinyText
-              text="What if evacuations were proactive, not reactive?"
-              speed={2.6}
-              spread={120}
-              color="rgba(248, 250, 252, 0.72)"
-              shineColor="#ffffff"
-              pauseOnHover
-              yoyo
+        {/* Hero — headline left, visual right */}
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+            alignItems: "center",
+            justifyItems: "center",
+            gap: 42,
+            padding: "60px 0 70px",
+            minHeight: "73vh"
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 22, textAlign: "left", alignItems: "flex-start", paddingLeft: 18 }}>
+            <div style={{ fontSize: 74, fontWeight: 800, letterSpacing: 0.2, lineHeight: 1.25 }}>
+              <ShinyText
+                text="Crowd Safety, Reimagined."
+                speed={2.6}
+                spread={120}
+                color="rgba(248, 250, 252, 0.72)"
+                shineColor="#ffffff"
+                pauseOnHover
+                yoyo
+              />
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 500, color: "rgba(248, 250, 252, 0.78)", maxWidth: 560, lineHeight: 1.6, letterSpacing: 0.5 }}>
+              Proactive intelligence for safer, smarter evacuations.
+            </div>
+            <div style={{ display: "flex", gap: 14, marginTop: 20 }}>
+              <Link
+                to="/signup"
+                style={{
+                  padding: "13px 18px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(177, 158, 239, 0.25)",
+                  background: "rgba(255, 255, 255, 0.08)",
+                  color: "#f8fafc",
+                  textDecoration: "none",
+                  fontWeight: 700,
+                  fontSize: 15.5,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8
+                }}
+              >
+                Enter SENTINEL
+              </Link>
+              <a
+                href="https://example.com"
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  padding: "13px 18px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(177, 158, 239, 0.25)",
+                  background: "rgba(255, 255, 255, 0.06)",
+                  color: "#f8fafc",
+                  textDecoration: "none",
+                  fontWeight: 700,
+                  fontSize: 15.5,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8
+                }}
+              >
+                Meet Our Team
+              </a>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end", width: "100%" }}>
+            <img
+              src={sentinelMain}
+              alt="SENTINEL platform overview"
+              style={{
+                width: "100%",
+                maxWidth: 640,
+                height: "auto",
+                borderRadius: 14,
+                boxShadow: "0 18px 38px rgba(0,0,0,0.45)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(255, 255, 255, 0.02)",
+                transform: "translate3d(0,0,0)"
+              }}
             />
           </div>
         </section>
 
-        <div style={{ display: "flex", justifyContent: "left", margin: "32px 0 48px" }}>
-          <img
-            src={sentinelMain}
-            alt="SENTINEL platform overview"
-            style={{
-              width: "100%",
-              maxWidth: 600,
-              height: "auto",
-              borderRadius: 14,
-              boxShadow: "0 18px 38px rgba(0,0,0,0.45)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(255, 255, 255, 0.02)"
-            }}
-          />
-        </div>
-
-        <div style={{ height: 240 }} />
+        <div style={{ height: 180 }} />
 
       <SectionDivider />
 
