@@ -595,7 +595,7 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      <div style={{ height: 150 }} />
+      <div style={{ height: 300 }} />
 
       {/* Statistics / Impact Carousel */}
       <section
@@ -617,11 +617,12 @@ const Landing: React.FC = () => {
         >
           <div
             style={{
-              fontSize: 42,
+              fontSize: 62,
               fontWeight: 800,
               textAlign: "center" as const,
               color: "#f8fafc",
               lineHeight: 1.2,
+              marginBottom: 30
             }}
           >
             The Human Cost of Delayed Response
@@ -631,7 +632,7 @@ const Landing: React.FC = () => {
         <StatisticsCarousel slides={STAT_SLIDES} />
       </section>
 
-      <div style={{ height: 150 }} />
+      <div style={{ height: 300 }} />
 
       {/* Section 7 — Use Cases */}
       <section id="use-cases" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
