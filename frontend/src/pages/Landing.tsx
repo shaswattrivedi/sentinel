@@ -8,6 +8,38 @@ import sentinelMain from "@/assets/sentinel-main.png";
 import TextType from "@/components/TextType";
 import ShinyText from "@/components/ShinyText";
 import SpotlightCard from "@/components/SpotlightCard";
+import StatisticsCarousel from "@/components/StatisticsCarousel";
+import type { StatSlide } from "@/components/StatisticsCarousel";
+import problemStampedes from "@/assets/problem-stampedes.png";
+import problemInjuries from "@/assets/problem-injuries.png";
+import problemFire from "@/assets/problem-fire.png";
+
+const STAT_SLIDES: StatSlide[] = [
+  {
+    image: problemStampedes,
+    alt: "Stampede fatalities graph",
+    label: "STAMPEDE INCIDENTS",
+    heading: "~800 Deaths Annually",
+    description:
+      "Stampedes remain one of the deadliest crowd disasters, causing ~800 deaths annually, with over 11,000 fatalities recorded between 2006\u20132019, primarily during mass gatherings and evacuation failures.",
+  },
+  {
+    image: problemInjuries,
+    alt: "Disaster-related injuries graph",
+    label: "DISASTER INJURIES",
+    heading: "~36% Increase Over a Decade",
+    description:
+      "Disaster-related injuries in India have increased by ~36% over the last decade, driven by rapid urbanization, higher crowd density, and delayed early-warning interventions.",
+  },
+  {
+    image: problemFire,
+    alt: "Urban fire incidents graph",
+    label: "URBAN FIRE EXPOSURE",
+    heading: "15,000\u201318,000 Injuries Per Year",
+    description:
+      "Urban fire incidents in India consistently cause 15,000\u201318,000 injuries annually, while fatalities remain lower at 3,000\u20134,000 deaths per year, highlighting survivability but severe exposure risk in dense environments.",
+  },
+];
 
 const SectionDivider: React.FC = () => (
   <div
@@ -145,8 +177,8 @@ const Landing: React.FC = () => {
             {[
               { label: "Home", action: () => scrollTo("top") },
               { label: "Product", action: () => scrollTo("product-section") },
-              { label: "Use Cases", action: () => scrollTo("use-cases") },
-              { label: "Contact Us", action: () => scrollTo("contact") }
+              { label: "References", action: () => scrollTo("statistics-section") },
+              { label: "Use Cases", action: () => scrollTo("use-cases") }
             ].map((item) => (
               <button
                 key={item.label}
@@ -561,6 +593,42 @@ const Landing: React.FC = () => {
 
           </AnimatePresence>
         </div>
+      </section>
+
+      <div style={{ height: 150 }} />
+
+      {/* Statistics / Impact Carousel */}
+      <section
+        id="statistics-section"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 32,
+          scrollMarginTop: 120,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 42,
+              fontWeight: 800,
+              textAlign: "center" as const,
+              color: "#f8fafc",
+              lineHeight: 1.2,
+            }}
+          >
+            The Human Cost of Delayed Response
+          </div>
+        </div>
+
+        <StatisticsCarousel slides={STAT_SLIDES} />
       </section>
 
       <div style={{ height: 150 }} />
