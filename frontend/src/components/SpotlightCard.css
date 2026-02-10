@@ -1,0 +1,40 @@
+.card-spotlight {
+  position: relative;
+  border-radius: 16px;
+  border: 1px solid rgba(177, 158, 239, 0.22);
+  background: rgba(11, 10, 21, 0.7);
+  padding: 22px 24px;
+  overflow: hidden;
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+  --spotlight-color: rgba(177, 158, 239, 0.16);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.card-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), var(--spotlight-color), transparent 75%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.card-spotlight:hover::before,
+.card-spotlight:focus-within::before {
+  opacity: 0.6;
+}
+
+.card-spotlight:hover,
+.card-spotlight:focus-within {
+  border-color: rgba(177, 158, 239, 0.32);
+  box-shadow: 0 12px 42px rgba(0, 0, 0, 0.5), 0 0 24px rgba(177, 158, 239, 0.15);
+}
+
+.solutions-spotlight-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
