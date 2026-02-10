@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import "./StatisticsCarousel.css";
+import TiltedCard from "@/components/TiltedCard";
 
 export interface StatSlide {
   image: string;
@@ -47,11 +48,17 @@ const StatisticsCarousel: React.FC<Props> = ({ slides }) => {
           <div key={i} className="stats-carousel__slide">
             {/* Image — left */}
             <div className="stats-carousel__image-wrap">
-              <img
-                src={slide.image}
-                alt={slide.alt}
-                className="stats-carousel__image"
-                draggable={false}
+              <TiltedCard
+                imageSrc={slide.image}
+                altText={slide.alt}
+                containerWidth="100%"
+                containerHeight="auto"
+                imageWidth="100%"
+                imageHeight="auto"
+                rotateAmplitude={10}
+                scaleOnHover={1.035}
+                showTooltip={false}
+                showMobileWarning={false}
               />
             </div>
 
