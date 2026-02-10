@@ -111,6 +111,19 @@ input {
   text-decoration: underline;
 }
 
+.stats-heading {
+  font-size: 62px;
+  font-weight: 800;
+  color: #f8fafc;
+  line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+  .stats-heading {
+    font-size: 44px;
+  }
+}
+
 .glass-card label div {
   color: rgba(248, 250, 252, 0.85);
   font-size: 0.875rem;
