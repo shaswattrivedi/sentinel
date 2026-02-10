@@ -1,16 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import problemInitial from "@/assets/problem-initial.png";
-import problemStampedes from "@/assets/problem-stampedes.png";
-import problemInjuries from "@/assets/problem-injuries.png";
-import problemFire from "@/assets/problem-fire.png";
-import problemPanic from "@/assets/problem-panic.png";
+import sentinelAdvantage from "@/assets/sentinel-advantage.png";
 import sentinelMain from "@/assets/sentinel-main.png";
 import TextType from "@/components/TextType";
 import ShinyText from "@/components/ShinyText";
+import SpotlightCard from "@/components/SpotlightCard";
 
 const SectionDivider: React.FC = () => (
   <div
@@ -45,118 +42,183 @@ const Landing: React.FC = () => {
   const primaryCta = () => navigate(user ? "/dashboard" : "/login");
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (!el) return;
+
+    const NAV_SAFE_OFFSET = 110; // keeps section closer to top even when navbar hides
+    const rect = el.getBoundingClientRect();
+    const targetY = rect.top + window.scrollY - NAV_SAFE_OFFSET;
+
+    window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
   };
 
-  const problemSlides = [
-    {
-      key: "overview",
-      heading: "",
-      body: "The ROOT Cause - SENTINEL addresses crowd risk before it escalates.",
-      image: problemInitial
-    },
-    {
-      key: "stampedes",
-      heading: "",
-      body: "STAMPEDES - Approx. 800 deaths/year; 2006–19 saw 11,000+ fatalities.",
-      image: problemStampedes
-    },
-    {
-      key: "injuries",
-      heading: "",
-      body: "INJURIES - India shows ~36% increase in injuries over 16 years.",
-      image: problemInjuries
-    },
-    {
-      key: "fire",
-      heading: "",
-      body: "FIRE DISASTERS - 15000–18000 injuries and 3000–4000 deaths annually.",
-      image: problemFire
-    },
-    {
-      key: "panic",
-      heading: "",
-      body: "PANIC - Delays and crowd surges keep risk high without early action.",
-      image: problemPanic
-    }
-  ];
+  const [productTab, setProductTab] = useState(0);
+  const productTabs = ["THE PROBLEM", "CURRENT SOLUTIONS", "SENTINEL'S ADVANTAGE"] as const;
 
-  const [problemIndex, setProblemIndex] = useState(0);
-  const nextProblem = () => setProblemIndex((prev) => (prev + 1) % problemSlides.length);
-  const prevProblem = () => setProblemIndex((prev) => (prev - 1 + problemSlides.length) % problemSlides.length);
+  /* ── Scroll-aware navbar hide/show ── */
+  const [navVisible, setNavVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
+
+  const handleScroll = useCallback(() => {
+    if (ticking.current) return;
+    ticking.current = true;
+
+    requestAnimationFrame(() => {
+      const currentY = window.scrollY;
+      const threshold = 8; // minimum delta to trigger
+
+      if (currentY < 60) {
+        // Always show near the top
+        setNavVisible(true);
+      } else if (Math.abs(currentY - lastScrollY.current) > threshold) {
+        setNavVisible(currentY < lastScrollY.current);
+      }
+
+      lastScrollY.current = currentY;
+      ticking.current = false;
+    });
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
 
   return (
     <div id="top" style={{ color: "#f8fafc", scrollBehavior: "smooth" }}>
-      {/* Top Navigation Bar with brand */}
-      <nav
-        className="glass-card"
+      {/* ── Floating Pill Navbar ── */}
+      <div
         style={{
           position: "fixed",
           top: 0,
           left: 0,
           right: 0,
-          zIndex: 20,
-          padding: "25px 32px",
+          zIndex: 50,
           display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 18,
-          flexWrap: "wrap",
-          borderRadius: 0,
-          borderBottom: "1px solid rgba(255,255,255,0.08)"
+          justifyContent: "center",
+          padding: "14px 24px 0",
+          pointerEvents: "none",
+          transform: navVisible ? "translateY(0)" : "translateY(-110%)",
+          opacity: navVisible ? 1 : 0,
+          transition: "transform 0.45s cubic-bezier(0.4, 0, 0.1, 1), opacity 0.35s cubic-bezier(0.4, 0, 0.1, 1)",
+          willChange: "transform, opacity"
         }}
       >
-        <Link to="/" style={{ color: "#f8fafc", textDecoration: "none", fontSize: 50, fontWeight: 800, letterSpacing: 1 }}>
-          SENTINEL
-        </Link>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 18, marginLeft: "auto" }}>
-          {[
-            { label: "Home", action: () => scrollTo("top") },
-            { label: "Product", action: () => scrollTo("product-section") },
-            { label: "Use Cases", action: () => scrollTo("use-cases") },
-            { label: "Contact Us", action: () => scrollTo("contact") }
-          ].map((item) => (
-            <button
-              key={item.label}
-              onClick={item.action}
-              style={{
-                padding: "11px 11px",
-                borderRadius: 8,
-                border: "1px solid rgba(177, 158, 239, 0.25)",
-                background: "rgba(255, 255, 255, 0.06)",
-                color: "#f8fafc",
-                cursor: "pointer",
-                fontWeight: 600,
-                fontSize: 15,
-                minWidth: 112
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
+        <nav
+          style={{
+            pointerEvents: "auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 20,
+            width: "100%",
+            maxWidth: 1180,
+            padding: "12px 10px 12px 24px",
+            borderRadius: 9999,
+            background: "rgba(11, 10, 21, 0.7)",
+            backdropFilter: "blur(20px) saturate(1.4)",
+            WebkitBackdropFilter: "blur(20px) saturate(1.4)",
+            border: "1px solid rgba(177, 158, 239, 0.18)",
+            boxShadow:
+              "0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(177, 158, 239, 0.06), inset 0 1px 0 rgba(255,255,255,0.04)"
+          }}
+        >
+          {/* Wordmark */}
           <Link
-            to={user ? "/dashboard" : "/login"}
+            to="/"
             style={{
-              padding: "11px 11px",
-              borderRadius: 8,
-              border: "1px solid rgba(177, 158, 239, 0.25)",
-              background: "rgba(255, 255, 255, 0.06)",
               color: "#f8fafc",
               textDecoration: "none",
-              fontWeight: 600,
-              minWidth: 112,
-              textAlign: "center",
-              display: "inline-block",
-              fontSize: 15,
-              whiteSpace: "nowrap"
+              fontSize: 32,
+              fontWeight: 800,
+              marginBottom: 2,
+              letterSpacing: 1.5,
+              lineHeight: 0.8,
+              flexShrink: 0
             }}
-          >Login to Dashboard</Link>
-        </div>
-      </nav>
+          >
+            SENTINEL
+          </Link>
+
+          {/* Nav items */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {[
+              { label: "Home", action: () => scrollTo("top") },
+              { label: "Product", action: () => scrollTo("product-section") },
+              { label: "Use Cases", action: () => scrollTo("use-cases") },
+              { label: "Contact Us", action: () => scrollTo("contact") }
+            ].map((item) => (
+              <button
+                key={item.label}
+                onClick={item.action}
+                style={{
+                  padding: "10px 22px",
+                  borderRadius: 9999,
+                  border: "1px solid transparent",
+                  background: "transparent",
+                  color: "rgba(248, 250, 252, 0.7)",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: 14,
+                  letterSpacing: 0.2,
+                  transition: "all 0.25s ease",
+                  whiteSpace: "nowrap",
+                  display: "inline-flex",
+                  alignItems: "center"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#f8fafc";
+                  e.currentTarget.style.background = "rgba(177, 158, 239, 0.1)";
+                  e.currentTarget.style.borderColor = "rgba(177, 158, 239, 0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "rgba(248, 250, 252, 0.7)";
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.borderColor = "transparent";
+                }}
+              >
+                {item.label}
+              </button>
+            ))}
+
+            {/* CTA — Login to Dashboard */}
+            <Link
+              to={user ? "/dashboard" : "/login"}
+              style={{
+                padding: "10px 24px",
+                borderRadius: 9999,
+                background: "linear-gradient(135deg, rgba(177, 158, 239, 0.25) 0%, rgba(124, 107, 191, 0.18) 100%)",
+                border: "1px solid rgba(177, 158, 239, 0.35)",
+                color: "#f8fafc",
+                textDecoration: "none",
+                fontWeight: 600,
+                fontSize: 14,
+                letterSpacing: 0.2,
+                whiteSpace: "nowrap",
+                transition: "all 0.25s ease",
+                display: "inline-flex",
+                alignItems: "center",
+                marginRight: 4
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background =
+                  "linear-gradient(135deg, rgba(177, 158, 239, 0.38) 0%, rgba(124, 107, 191, 0.28) 100%)";
+                e.currentTarget.style.boxShadow = "0 0 16px rgba(177, 158, 239, 0.2)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background =
+                  "linear-gradient(135deg, rgba(177, 158, 239, 0.25) 0%, rgba(124, 107, 191, 0.18) 100%)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              Login to Dashboard
+            </Link>
+          </div>
+        </nav>
+      </div>
 
       {/* Spacer for fixed navbar */}
-      <div style={{ height: 90 }} />
+      <div style={{ height: 72 }} />
 
       <div style={{ maxWidth: 1350, margin: "0 auto", padding: "48px 20px 0" }}>
         {/* Hero — headline left, visual right */}
@@ -179,28 +241,41 @@ const Landing: React.FC = () => {
                 spread={120}
                 color="rgba(248, 250, 252, 0.72)"
                 shineColor="#ffffff"
-                pauseOnHover
+                pauseOnHover={false}
                 yoyo
               />
             </div>
             <div style={{ fontSize: 22, fontWeight: 500, color: "rgba(248, 250, 252, 0.78)", maxWidth: 560, lineHeight: 1.6, letterSpacing: 0.5 }}>
               Proactive intelligence for safer, smarter evacuations.
             </div>
-            <div style={{ display: "flex", gap: 14, marginTop: 20 }}>
+            <div style={{ display: "flex", gap: 14, marginTop: 16 }}>
               <Link
                 to="/signup"
                 style={{
-                  padding: "13px 18px",
-                  borderRadius: 10,
-                  border: "1px solid rgba(177, 158, 239, 0.25)",
-                  background: "rgba(255, 255, 255, 0.08)",
+                  padding: "12px 26px",
+                  borderRadius: 9999,
+                  background: "linear-gradient(135deg, rgba(177, 158, 239, 0.25) 0%, rgba(124, 107, 191, 0.18) 100%)",
+                  border: "1px solid rgba(177, 158, 239, 0.35)",
                   color: "#f8fafc",
                   textDecoration: "none",
                   fontWeight: 700,
-                  fontSize: 15.5,
+                  fontSize: 15,
+                  letterSpacing: 0.2,
+                  whiteSpace: "nowrap",
+                  transition: "all 0.25s ease",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 8
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background =
+                    "linear-gradient(135deg, rgba(177, 158, 239, 0.38) 0%, rgba(124, 107, 191, 0.28) 100%)";
+                  e.currentTarget.style.boxShadow = "0 0 16px rgba(177, 158, 239, 0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background =
+                    "linear-gradient(135deg, rgba(177, 158, 239, 0.25) 0%, rgba(124, 107, 191, 0.18) 100%)";
+                  e.currentTarget.style.boxShadow = "none";
                 }}
               >
                 Enter SENTINEL
@@ -210,17 +285,30 @@ const Landing: React.FC = () => {
                 target="_blank"
                 rel="noreferrer"
                 style={{
-                  padding: "13px 18px",
-                  borderRadius: 10,
-                  border: "1px solid rgba(177, 158, 239, 0.25)",
-                  background: "rgba(255, 255, 255, 0.06)",
+                  padding: "12px 26px",
+                  borderRadius: 9999,
+                  background: "linear-gradient(135deg, rgba(177, 158, 239, 0.25) 0%, rgba(124, 107, 191, 0.18) 100%)",
+                  border: "1px solid rgba(177, 158, 239, 0.35)",
                   color: "#f8fafc",
                   textDecoration: "none",
                   fontWeight: 700,
-                  fontSize: 15.5,
+                  fontSize: 15,
+                  letterSpacing: 0.2,
+                  whiteSpace: "nowrap",
+                  transition: "all 0.25s ease",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 8
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background =
+                    "linear-gradient(135deg, rgba(177, 158, 239, 0.38) 0%, rgba(124, 107, 191, 0.28) 100%)";
+                  e.currentTarget.style.boxShadow = "0 0 16px rgba(177, 158, 239, 0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background =
+                    "linear-gradient(135deg, rgba(177, 158, 239, 0.25) 0%, rgba(124, 107, 191, 0.18) 100%)";
+                  e.currentTarget.style.boxShadow = "none";
                 }}
               >
                 Meet Our Team
@@ -246,13 +334,11 @@ const Landing: React.FC = () => {
           </div>
         </section>
 
-        <div style={{ height: 180 }} />
+        <div style={{ height: 120 }} />
 
-      <SectionDivider />
-
-      {/* Section 4 — Three Information Boxes */}
-      <section id="product-section" style={{ display: "flex", flexDirection: "column", gap: 36 }}>
-        <div style={{ fontSize: 48, fontWeight: 800, textAlign: "center", marginBottom: 12 }}>
+      {/* Product Section — Tab-based */}
+      <section id="product-section" style={{ display: "flex", flexDirection: "column", gap: 0, scrollMarginTop: 120 }}>
+        <div style={{ fontSize: 68, fontWeight: 800, textAlign: "center", marginBottom: 36 }}>
           <TextType
             text={["Why Crowd Safety Fails?", "Why Crowd Safety Fails?", "Why Crowd Safety Fails?"]}
             typingSpeed={70}
@@ -264,162 +350,220 @@ const Landing: React.FC = () => {
           />
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-          {/* The Problem carousel with paired graph */}
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 1080,
-              alignSelf: "center",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 50,
-              alignItems: "stretch"
-            }}
+        <div style={{ height: 5 }} />
+
+        {/* Tab bar */}
+        <div
+          role="tablist"
+          aria-label="Product information"
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 10,
+            marginBottom: 44,
+            flexWrap: "wrap"
+          }}
         >
-
-            <div
-              className="glass-card"
+          {productTabs.map((label, i) => (
+            <button
+              key={label}
+              role="tab"
+              aria-selected={productTab === i}
+              tabIndex={productTab === i ? 0 : -1}
+              onClick={() => setProductTab(i)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowRight") { e.preventDefault(); setProductTab((i + 1) % productTabs.length); }
+                if (e.key === "ArrowLeft") { e.preventDefault(); setProductTab((i - 1 + productTabs.length) % productTabs.length); }
+              }}
               style={{
-                flex: "1 1 620px",
-                minWidth: "min(640px, 100%)",
-                padding: 24,
-                display: "flex",
-                flexDirection: "column",
-                gap: 16,
-                position: "relative"
+                padding: "13px 28px",
+                marginRight: 10,
+                borderRadius: 10,
+                border: productTab === i
+                  ? "1px solid rgba(177, 158, 239, 0.55)"
+                  : "1px solid rgba(177, 158, 239, 0.15)",
+                background: productTab === i
+                  ? "rgba(177, 158, 239, 0.12)"
+                  : "rgba(255, 255, 255, 0.04)",
+                color: productTab === i ? "#f8fafc" : "rgba(248, 250, 252, 0.5)",
+                cursor: "pointer",
+                fontWeight: 700,
+                fontSize: 14,
+                letterSpacing: 0.8,
+                transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+                boxShadow: productTab === i
+                  ? "0 0 20px rgba(177, 158, 239, 0.12), inset 0 0 12px rgba(177, 158, 239, 0.06)"
+                  : "none",
+                whiteSpace: "nowrap"
               }}
             >
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12, position: "relative" }}>
-                <button
-                  onClick={prevProblem}
-                  aria-label="Previous"
-                  style={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: 8,
-                    border: "1px solid rgba(177, 158, 239, 0.25)",
-                    background: "rgba(255, 255, 255, 0.06)",
-                    color: "#f8fafc",
-                    cursor: "pointer",
-                    position: "absolute",
-                    left: 0,
-                    top: 0
-                  }}
-                >
-                  <ChevronLeft size={25} />
-                </button>
-                <div style={{ color: "#f8fafc", fontWeight: 900, fontSize: 40, letterSpacing: 1 }}>THE PROBLEM</div>
-                <button
-                  onClick={nextProblem}
-                  aria-label="Next"
-                  style={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: 8,
-                    border: "1px solid rgba(177, 158, 239, 0.25)",
-                    background: "rgba(255, 255, 255, 0.06)",
-                    color: "#f8fafc",
-                    cursor: "pointer",
-                    position: "absolute",
-                    right: 0,
-                    top: 0
-                  }}
-                >
-                  <ChevronRight size={25} />
-                </button>
-              </div>
+              {label}
+            </button>
+          ))}
+        </div>
 
-              <AnimatePresence mode="wait">
+        <div style={{ height: 5 }} />
+
+        {/* Tab content */}
+        <div
+          role="tabpanel"
+          className="glass-card"
+          style={{
+            position: "relative",
+            minHeight: 400,
+            overflow: "hidden",
+            paddingTop: "42px",
+            paddingLeft: "32px",
+            paddingRight: "32px",
+            background: "rgba(255, 255, 255, 0.04)",
+            border: "1px solid rgba(177, 158, 239, 0.18)",
+            maxWidth: 1180,
+            margin: "0 auto",
+            width: "100%"
+          }}
+        >
+          <AnimatePresence mode="wait">
+
+            {/* ── TAB 1: THE PROBLEM ── */}
+            {productTab === 0 && (
+              <motion.div
+                key="tab-problem"
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+                  gap: 48,
+                  alignItems: "center",
+                  maxWidth: 1080,
+                  margin: "0 auto"
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                  <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", textAlign: "center", paddingBottom: 12 }}>The Root Cause</div>
+                  <div style={{ color: "rgba(248, 250, 252, 0.78)", fontSize: 17, lineHeight: 1.7 }}>
+                    Crowd risk rarely originates from panic; it develops through early-stage imbalances such as uneven flow, localized density accumulation, and delayed response. As these conditions intensify, safety diminishes and decision windows narrow. By the time risk becomes visible, reaction time has already collapsed, forcing response into a reactive state.
+                    <br /><br />
+                    <span style={{ color: "rgba(177, 158, 239, 0.9)", fontWeight: 600}}>
+                      SENTINEL addresses crowd risk before it escalates.
+                    </span>
+                  </div>
+                </div>
                 <motion.div
-                  key={problemSlides[problemIndex].key}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  transition={{ duration: 0.25 }}
-                  style={{ color: "rgba(248, 250, 252, 0.85)", fontSize: 22, lineHeight: 2.0 }}
+                  initial={{ opacity: 0, scale: 0.94 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
+                  style={{ display: "flex", justifyContent: "center" }}
                 >
-                  <div style={{ fontWeight: 700, marginBottom: 6 }}><center>{problemSlides[problemIndex].heading}</center></div>
-                  <div><center>{problemSlides[problemIndex].body}</center></div>
+                  <img
+                    src={problemInitial}
+                    alt="Crowd risk visualization"
+                    style={{
+                      width: "100%",
+                      maxWidth: 500,
+                      height: "auto",
+                      borderRadius: 14,
+                      boxShadow: "0 14px 38px rgba(0,0,0,0.45)",
+                      border: "1px solid rgba(255,255,255,0.08)"
+                    }}
+                  />
                 </motion.div>
-              </AnimatePresence>
-            </div>
+              </motion.div>
+            )}
 
-            <div
-              style={{
-                flex: "1 1 320px",
-                minWidth: 280,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 8
-              }}
-            >
-              <AnimatePresence mode="wait">
-                <motion.img
-                  key={problemSlides[problemIndex].image}
-                  src={problemSlides[problemIndex].image}
-                  alt={problemSlides[problemIndex].heading}
-                  initial={{ opacity: 0, x: 16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -16 }}
-                  transition={{ duration: 0.25 }}
-                  style={{
-                    width: "100%",
-                    maxWidth: 520,
-                    aspectRatio: "2 / 1",
-                    height: "auto",
-                    objectFit: "cover",
-                    borderRadius: 12,
-                    boxShadow: "0 12px 30px rgba(0,0,0,0.4)",
-                    background: "transparent"
-                  }}
-                />
-              </AnimatePresence>
-            </div>
-          </div>
+            {/* ── TAB 2: CURRENT SOLUTIONS ── */}
+            {productTab === 1 && (
+              <motion.div
+                key="tab-solutions"
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
+                style={{ maxWidth: 960, margin: "0 auto" }}
+              >
+                <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", marginBottom: 26, textAlign: "center" }}>
+                  Why Existing Systems Fall Short
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 18, textAlign: "center", marginTop: 44, cursor: "default"}}>
+                  {[
+                    { title: "CCTV & Video Surveillance", desc: "Broad visual coverage enables monitoring, but detection remains manual and delayed, making early anomaly recognition unreliable under fast-changing conditions." },
+                    { title: "People Counting Systems", desc: "Basic occupancy systems tracking provides headcounts, but lacks flow awareness, spatial density context, and any predictive movement insight that can be derived." },
+                    { title: "AI Video Analytics", desc: "Advanced tracking systems improve insight, yet systems remain costly, bandwidth-intensive, and largely dependent on human-driven decisions which reduce efficiency." }
+                  ].map((item, i) => (
+                    <motion.div
+                      key={item.title}
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.32, delay: 0.06 + i * 0.09, ease: [0.4, 0, 0.2, 1] }}
+                    >
+                      <SpotlightCard className="glass-card solutions-spotlight-card" spotlightColor="rgba(177, 158, 239, 0.25)">
+                        <div style={{ fontWeight: 700, fontSize: 15.5, color: "#f8fafc" }}>{item.title}</div>
+                        <div style={{ color: "rgba(248, 250, 252, 0.72)", fontSize: 14.5, lineHeight: 1.7 }}>{item.desc}</div>
+                      </SpotlightCard>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
-          {/* Current Solutions */}
-          <div style={{ width: "100%", maxWidth: 720, alignSelf: "flex-end" }}>
-            <Card title="Current Solutions">
-              <ul style={{ margin: 0, paddingLeft: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-                <li><strong>CCTV & Video:</strong> Broad coverage but delayed, manual, and weak at early anomaly detection.</li>
-                <li><strong>People counting:</strong> Entry/exit totals but no flow direction or prediction, limited low-light insight.</li>
-                <li><strong>AI video analytics:</strong> Detects/tracks yet costly, bandwidth-heavy, with decisions still manual.</li>
-                <li><strong>Emergency evacuation software:</strong> Simulates routes, visualizes choke points, and tests designs, but not live-linked to IoT/crowd sensors and remains simulation-only during real incidents.</li>
-              </ul>
-            </Card>
-          </div>
+            {/* ── TAB 3: SENTINEL'S ADVANTAGE ── */}
+            {productTab === 2 && (
+              <motion.div
+                key="tab-advantage"
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+                  gap: 48,
+                  alignItems: "center",
+                  maxWidth: 1080,
+                  margin: "0 auto"
+                }}
+              >
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.94 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
+                  style={{ display: "flex", justifyContent: "center" }}
+                >
+                  <img
+                    src={sentinelAdvantage}
+                    alt="SENTINEL predictive intelligence"
+                    style={{
+                      width: "100%",
+                      maxWidth: 500,
+                      height: "auto",
+                      borderRadius: 14,
+                      boxShadow: "0 14px 38px rgba(0,0,0,0.45)",
+                      border: "1px solid rgba(255,255,255,0.08)"
+                    }}
+                  />
+                </motion.div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                  <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", textAlign: "center", paddingBottom: 12 }}>
+                    Reaction to Prediction
+                  </div>
+                  <div style={{ color: "rgba(248, 250, 252, 0.78)", fontSize: 17, lineHeight: 1.7 }}>
+                    • SENTINEL combines distributed sensing with flow-aware machine learning to continuously analyze crowd dynamics in real time.
+                    <br /><br />
+                    • Congestion patterns, density imbalances, and directional conflicts are identified before risk becomes visible.
+                    <br /><br />
+                    • Predictive insights enable proactive decision-making rather than reactive response.
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
-          {/* SENTINEL Advantage */}
-          <div style={{ width: "100%", maxWidth: 720, alignSelf: "flex-start" }}>
-            <Card title="SENTINEL's Advantage">
-              <ul style={{ margin: 0, paddingLeft: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-                <li><strong>Combined strengths:</strong> CCTV reach, counting precision, and analytics without blind spots.</li>
-                <li><strong>Predictive intelligence:</strong> Flow-aware analysis plus automated evacuation guidance.</li>
-                <li><strong>Cost efficiency:</strong> Distributed sensing delivers proactive prevention over reactive response.</li>
-                <li><strong>Live-integrated response:</strong> Fuses simulations with real-time sensor data to update routes dynamically when conditions change.</li>
-              </ul>
-            </Card>
-          </div>
+          </AnimatePresence>
         </div>
       </section>
 
-      <SectionDivider />
-
-      {/* Section 5 — Differentiators & Technology Overview */}
-      <section id="detection-decision" style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 10, textAlign: "center" }}>
-        <div style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>From Detection to Decision</div>
-      </section>
-
-      <section className="glass-card" id="why" style={{ padding: 22, display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style={{ fontSize: 18, fontWeight: 700, textAlign: "center" }}>Why SENTINEL works</div>
-        <div style={{ color: "rgba(248, 250, 252, 0.78)", fontSize: 15, lineHeight: 1.6, textAlign: "center" }}>
-          SENTINEL blends distributed sensing (ESP32-CAM nodes) with ML-driven risk modeling to deliver real-time situational awareness. Predictive analytics flag crowd instability early, explainable safety decisions keep teams informed, and adaptive routing reduces congestion during evacuations. The system scales across venues, feeding continuous telemetry into proactive safeguards rather than relying on human reaction time.
-        </div>
-      </section>
-
-      <SectionDivider />
+      <div style={{ height: 150 }} />
 
       {/* Section 7 — Use Cases */}
       <section id="use-cases" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -448,7 +592,7 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      <SectionDivider />
+      <div style={{ height: 150 }} />
 
       {/* Section 6 — Footer */}
       <footer
