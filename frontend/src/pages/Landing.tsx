@@ -77,7 +77,7 @@ const Landing: React.FC = () => {
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
-x₹
+
     const NAV_SAFE_OFFSET = 80; // approximate nav height/blurred bar
     const rect = el.getBoundingClientRect();
     const centerOffset = Math.max(0, (window.innerHeight - rect.height) / 2);
