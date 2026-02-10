@@ -10,6 +10,8 @@ import ShinyText from "@/components/ShinyText";
 import SpotlightCard from "@/components/SpotlightCard";
 import StatisticsCarousel from "@/components/StatisticsCarousel";
 import type { StatSlide } from "@/components/StatisticsCarousel";
+import SplitText from "@/components/SplitText";
+import TiltedCard from "@/components/TiltedCard";
 import problemStampedes from "@/assets/problem-stampedes.png";
 import problemInjuries from "@/assets/problem-injuries.png";
 import problemFire from "@/assets/problem-fire.png";
@@ -21,7 +23,7 @@ const STAT_SLIDES: StatSlide[] = [
     label: "STAMPEDE INCIDENTS",
     heading: "~800 Deaths Annually",
     description:
-      "Stampedes remain one of the deadliest crowd disasters, causing ~800 deaths annually, with over 11,000 fatalities recorded between 2006\u20132019, primarily during mass gatherings and evacuation failures.",
+      "Stampedes remain one of the deadliest crowd disasters, causing ~800 deaths annually, with over 11,000 fatalities recorded between 2006–2019, primarily during mass gatherings and evacuation failures.",
   },
   {
     image: problemInjuries,
@@ -35,9 +37,9 @@ const STAT_SLIDES: StatSlide[] = [
     image: problemFire,
     alt: "Urban fire incidents graph",
     label: "URBAN FIRE EXPOSURE",
-    heading: "15,000\u201318,000 Injuries Per Year",
+    heading: "15,000–18,000 Injuries Per Year",
     description:
-      "Urban fire incidents in India consistently cause 15,000\u201318,000 injuries annually, while fatalities remain lower at 3,000\u20134,000 deaths per year, highlighting survivability but severe exposure risk in dense environments.",
+      "Urban fire incidents in India consistently cause 15,000–18,000 injuries annually, while fatalities remain lower at 3,000–4,000 deaths per year, highlighting survivability but severe exposure risk in dense environments.",
   },
 ];
 
@@ -75,10 +77,12 @@ const Landing: React.FC = () => {
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
-
-    const NAV_SAFE_OFFSET = 110; // keeps section closer to top even when navbar hides
+x₹
+    const NAV_SAFE_OFFSET = 80; // approximate nav height/blurred bar
     const rect = el.getBoundingClientRect();
-    const targetY = rect.top + window.scrollY - NAV_SAFE_OFFSET;
+    const centerOffset = Math.max(0, (window.innerHeight - rect.height) / 2);
+    const offset = Math.max(NAV_SAFE_OFFSET, centerOffset);
+    const targetY = rect.top + window.scrollY - offset;
 
     window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
   };
@@ -349,20 +353,22 @@ const Landing: React.FC = () => {
           </div>
 
           <div style={{ display: "flex", justifyContent: "flex-end", width: "100%" }}>
-            <img
-              src={sentinelMain}
-              alt="SENTINEL platform overview"
-              style={{
-                width: "100%",
-                maxWidth: 640,
-                height: "auto",
-                borderRadius: 14,
-                boxShadow: "0 18px 38px rgba(0,0,0,0.45)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                background: "rgba(255, 255, 255, 0.02)",
-                transform: "translate3d(0,0,0)"
-              }}
-            />
+            <div style={{ width: "100%", maxWidth: 640 }}>
+              <div style={{ width: "100%", aspectRatio: "16 / 9" }}>
+                <TiltedCard
+                  imageSrc={sentinelMain}
+                  altText="SENTINEL platform overview"
+                  containerWidth="100%"
+                  containerHeight="100%"
+                  imageWidth="100%"
+                  imageHeight="100%"
+                  rotateAmplitude={10}
+                  scaleOnHover={1.035}
+                  showTooltip={false}
+                  showMobileWarning={false}
+                />
+              </div>
+            </div>
           </div>
         </section>
 
@@ -489,18 +495,20 @@ const Landing: React.FC = () => {
                   transition={{ duration: 0.5, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
                   style={{ display: "flex", justifyContent: "center" }}
                 >
-                  <img
-                    src={problemInitial}
-                    alt="Crowd risk visualization"
-                    style={{
-                      width: "100%",
-                      maxWidth: 500,
-                      height: "auto",
-                      borderRadius: 14,
-                      boxShadow: "0 14px 38px rgba(0,0,0,0.45)",
-                      border: "1px solid rgba(255,255,255,0.08)"
-                    }}
-                  />
+                  <div style={{ width: "100%", maxWidth: 500 }}>
+                    <TiltedCard
+                      imageSrc={problemInitial}
+                      altText="Crowd risk visualization"
+                      containerWidth="100%"
+                      containerHeight="auto"
+                      imageWidth="100%"
+                      imageHeight="auto"
+                      rotateAmplitude={10}
+                      scaleOnHover={1.035}
+                      showTooltip={false}
+                      showMobileWarning={false}
+                    />
+                  </div>
                 </motion.div>
               </motion.div>
             )}
@@ -563,18 +571,20 @@ const Landing: React.FC = () => {
                   transition={{ duration: 0.5, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
                   style={{ display: "flex", justifyContent: "center" }}
                 >
-                  <img
-                    src={sentinelAdvantage}
-                    alt="SENTINEL predictive intelligence"
-                    style={{
-                      width: "100%",
-                      maxWidth: 500,
-                      height: "auto",
-                      borderRadius: 14,
-                      boxShadow: "0 14px 38px rgba(0,0,0,0.45)",
-                      border: "1px solid rgba(255,255,255,0.08)"
-                    }}
-                  />
+                  <div style={{ width: "100%", maxWidth: 500 }}>
+                    <TiltedCard
+                      imageSrc={sentinelAdvantage}
+                      altText="SENTINEL predictive intelligence"
+                      containerWidth="100%"
+                      containerHeight="auto"
+                      imageWidth="100%"
+                      imageHeight="auto"
+                      rotateAmplitude={10}
+                      scaleOnHover={1.035}
+                      showTooltip={false}
+                      showMobileWarning={false}
+                    />
+                  </div>
                 </motion.div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                   <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", textAlign: "center", paddingBottom: 12 }}>
@@ -615,17 +625,21 @@ const Landing: React.FC = () => {
             gap: 10,
           }}
         >
-          <div
-            style={{
-              fontSize: 62,
-              fontWeight: 800,
-              textAlign: "center" as const,
-              color: "#f8fafc",
-              lineHeight: 1.2,
-              marginBottom: 30
-            }}
-          >
-            The Human Cost of Delayed Response
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+            <SplitText
+              text="The Human Cost of Delayed Response"
+              className="stats-heading"
+              delay={45}
+              duration={1}
+              ease="power3.out"
+              splitType="chars"
+              from={{ opacity: 0, y: 32 }}
+              to={{ opacity: 1, y: 0 }}
+              threshold={0.1}
+              rootMargin="-80px"
+              textAlign="center"
+              tag="div"
+            />
           </div>
         </div>
 
