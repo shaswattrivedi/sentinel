@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import problemInitial from "@/assets/problem-initial.png";
 import sentinelAdvantage from "@/assets/sentinel-advantage.png";
 import sentinelMain from "@/assets/sentinel-main.png";
+import sentinelBackdrop from "@/assets/sentinel-backdrop.png";
 import TextType from "@/components/TextType";
 import ShinyText from "@/components/ShinyText";
 import SpotlightCard from "@/components/SpotlightCard";
@@ -12,6 +13,8 @@ import StatisticsCarousel from "@/components/StatisticsCarousel";
 import type { StatSlide } from "@/components/StatisticsCarousel";
 import SplitText from "@/components/SplitText";
 import TiltedCard from "@/components/TiltedCard";
+import ScrollFloat from "@/components/ScrollFloat";
+import AboutUs from "@/components/AboutUs";
 import problemStampedes from "@/assets/problem-stampedes.png";
 import problemInjuries from "@/assets/problem-injuries.png";
 import problemFire from "@/assets/problem-fire.png";
@@ -54,20 +57,33 @@ const SectionDivider: React.FC = () => (
 );
 
 const Card: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div
+  <SpotlightCard
     className="glass-card"
+    spotlightColor="rgba(177, 158, 239, 0.22)"
     style={{
-      padding: 20,
-      display: "flex",
-      flexDirection: "column",
-      gap: 12,
-      alignItems: "stretch",
-      textAlign: "left"
+      padding: 0,
+      backgroundImage:
+        "linear-gradient(180deg, rgba(12, 11, 20, 0.82), rgba(12, 11, 20, 0.9)), url('" + sentinelBackdrop + "')",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+      backgroundBlendMode: "soft-light"
     }}
   >
-    <div style={{ color: "#f8fafc", fontWeight: 700, fontSize: 16, textAlign: "center" }}>{title}</div>
-    <div style={{ color: "rgba(248, 250, 252, 0.82)", fontSize: 15.5, lineHeight: 1.6, display: "flex", flexDirection: "column", gap: 9 }}>{children}</div>
-  </div>
+    <div
+      style={{
+        padding: 20,
+        display: "flex",
+        flexDirection: "column",
+        gap: 24,
+        alignItems: "stretch",
+        textAlign: "left"
+      }}
+    >
+      <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 24, textAlign: "center", letterSpacing: 0.2 }}>{title}</div>
+      <div style={{ color: "rgba(248, 250, 252, 0.82)", fontSize: 15.5, lineHeight: 1.6, display: "flex", flexDirection: "column", gap: 9 }}>{children}</div>
+    </div>
+  </SpotlightCard>
 );
 
 const Landing: React.FC = () => {
@@ -78,8 +94,16 @@ const Landing: React.FC = () => {
     const el = document.getElementById(id);
     if (!el) return;
 
-    const NAV_SAFE_OFFSET = 80; // approximate nav height/blurred bar
     const rect = el.getBoundingClientRect();
+
+    // For scroll-locked sections taller than ~1.5 viewports,
+    // scroll directly to their top so the fixed overlay activates.
+    if (rect.height > window.innerHeight * 1.5) {
+      window.scrollTo({ top: rect.top + window.scrollY, behavior: "smooth" });
+      return;
+    }
+
+    const NAV_SAFE_OFFSET = 80; // approximate nav height/blurred bar
     const centerOffset = Math.max(0, (window.innerHeight - rect.height) / 2);
     const offset = Math.max(NAV_SAFE_OFFSET, centerOffset);
     const targetY = rect.top + window.scrollY - offset;
@@ -167,6 +191,7 @@ const Landing: React.FC = () => {
               textDecoration: "none",
               fontSize: 32,
               fontWeight: 800,
+              fontFamily: "Performa, 'Plus Jakarta Sans', 'Satoshi', sans-serif",
               marginBottom: 2,
               letterSpacing: 1.5,
               lineHeight: 0.8,
@@ -182,6 +207,7 @@ const Landing: React.FC = () => {
               { label: "Home", action: () => scrollTo("top") },
               { label: "Product", action: () => scrollTo("product-section") },
               { label: "References", action: () => scrollTo("statistics-section") },
+              { label: "About Us", action: () => scrollTo("about-us") },
               { label: "Use Cases", action: () => scrollTo("use-cases") }
             ].map((item) => (
               <button
@@ -316,10 +342,8 @@ const Landing: React.FC = () => {
               >
                 Enter SENTINEL
               </Link>
-              <a
-                href="https://example.com"
-                target="_blank"
-                rel="noreferrer"
+              <button
+                onClick={() => scrollTo("about-us")}
                 style={{
                   padding: "12px 26px",
                   borderRadius: 9999,
@@ -334,7 +358,8 @@ const Landing: React.FC = () => {
                   transition: "all 0.25s ease",
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: 8
+                  gap: 8,
+                  cursor: "pointer"
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background =
@@ -347,8 +372,8 @@ const Landing: React.FC = () => {
                   e.currentTarget.style.boxShadow = "none";
                 }}
               >
-                Meet Our Team
-              </a>
+                About Us
+              </button>
             </div>
           </div>
 
@@ -538,9 +563,23 @@ const Landing: React.FC = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.32, delay: 0.06 + i * 0.09, ease: [0.4, 0, 0.2, 1] }}
                     >
-                      <SpotlightCard className="glass-card solutions-spotlight-card" spotlightColor="rgba(177, 158, 239, 0.25)">
-                        <div style={{ fontWeight: 700, fontSize: 15.5, color: "#f8fafc" }}>{item.title}</div>
-                        <div style={{ color: "rgba(248, 250, 252, 0.72)", fontSize: 14.5, lineHeight: 1.7 }}>{item.desc}</div>
+                      <SpotlightCard
+                        className="glass-card solutions-spotlight-card"
+                        spotlightColor="rgba(177, 158, 239, 0.25)"
+                        style={{
+                          padding: 0,
+                          backgroundImage:
+                            "linear-gradient(180deg, rgba(12, 11, 20, 0.82), rgba(12, 11, 20, 0.9)), url('" + sentinelBackdrop + "')",
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                          backgroundRepeat: "no-repeat",
+                          backgroundBlendMode: "soft-light"
+                        }}
+                      >
+                        <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
+                          <div style={{ fontWeight: 800, fontSize: 18, color: "#f8fafc" }}>{item.title}</div>
+                          <div style={{ color: "rgba(248, 250, 252, 0.72)", fontSize: 14.5, lineHeight: 1.7 }}>{item.desc}</div>
+                        </div>
                       </SpotlightCard>
                     </motion.div>
                   ))}
@@ -646,29 +685,40 @@ const Landing: React.FC = () => {
         <StatisticsCarousel slides={STAT_SLIDES} />
       </section>
 
-      <div style={{ height: 300 }} />
+      <div style={{ height: 50 }} />
+
+      {/* About Us — Scroll-locked Section */}
+      <AboutUs />
+
+      <div style={{ height: 50 }} />
 
       {/* Section 7 — Use Cases */}
       <section id="use-cases" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div style={{ fontSize: 28, fontWeight: 800, textAlign: "center", marginBottom: 6 }}>Use Cases</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 18, alignItems: "stretch" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 36 }}>
+          <ScrollFloat
+            animationDuration={10}
+            ease="back.inOut(3)"
+            scrollStart="center bottom+=50%"
+            scrollEnd="bottom bottom-=40%"
+            stagger={0.11}
+            textClassName="use-cases-heading"
+          >
+            Use Cases
+          </ScrollFloat>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 0.3fr))", gap: 18, alignItems: "center", justifyContent: "center"}}>
           <Card title="Large Public Buildings">
-            <div style={{ textAlign: "center" }}>
+            <div style={{ textAlign: "center", fontSize: 18 }}>
               Malls, airports, and convention centers rely on uninterrupted movement. SENTINEL keeps lobbies and corridors flowing, flags risky congestion early, and guides staff to respond before queues harden into blockages.
             </div>
           </Card>
           <Card title="Educational Institutions">
-            <div style={{ textAlign: "center" }}>
+            <div style={{ textAlign: "center", fontSize: 18 }}>
               Campuses, schools, and exam halls juggle surges at bells and events. Real-time density sensing and predictive routing help disperse crowds, keep stairwells clear, and protect students during drills or incidents.
             </div>
           </Card>
-          <Card title="Transportation Hubs">
-            <div style={{ textAlign: "center" }}>
-              Metro, rail, and bus terminals face peak-hour spikes and platform choke points. SENTINEL anticipates pressure zones, balances foot traffic across exits, and coordinates staff to prevent cascading delays.
-            </div>
-          </Card>
-          <Card title="Event & Mass Gathering Venues">
-            <div style={{ textAlign: "center" }}>
+          <Card title="Mass Gathering Venues">
+            <div style={{ textAlign: "center", fontSize: 18 }}>
               Stadiums, concerts, and religious gatherings demand rapid, safe egress. The platform detects turbulence in crowd flow, issues targeted guidance, and aligns stewards to keep routes clear when emotions run high.
             </div>
           </Card>
