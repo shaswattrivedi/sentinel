@@ -1,0 +1,376 @@
+/* ================================================================
+   About Us — Scroll-locked Multi-panel Section
+   ================================================================ */
+
+/* Outer container: provides scroll height for the fixed overlay */
+.about-section-outer {
+  position: relative;
+  left: 50%;
+  margin-left: -50vw;
+  width: 100vw;
+  /* height set inline: PANEL_COUNT * 100vh */
+}
+
+/* Fixed viewport overlay — covers the screen when the section is active */
+.about-section-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.about-section-fixed.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Ambient glow overlays ── */
+
+.about-glow {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(130px);
+  opacity: 0;
+  transition: opacity 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.about-glow.visible {
+  opacity: 1;
+}
+
+.about-glow--tl {
+  width: 620px;
+  height: 360px;
+  top: -140px;
+  right: -60px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(177, 158, 239, 0.14),
+    transparent 70%
+  );
+}
+
+.about-glow--br {
+  width: 520px;
+  height: 320px;
+  bottom: -110px;
+  left: -70px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(124, 107, 191, 0.11),
+    transparent 70%
+  );
+}
+
+.about-glow--center {
+  width: 800px;
+  height: 400px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(177, 158, 239, 0.06),
+    transparent 65%
+  );
+}
+
+/* ── Section dividers ── */
+
+.about-section-divider {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  z-index: 5;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(177, 158, 239, 0.18) 15%,
+    rgba(177, 158, 239, 0.32) 50%,
+    rgba(177, 158, 239, 0.18) 85%,
+    transparent 100%
+  );
+}
+
+.about-section-divider--top {
+  top: 0;
+}
+
+.about-section-divider--bottom {
+  bottom: 0;
+}
+
+/* ── Progress indicator (right rail) ── */
+
+.about-progress {
+  position: absolute;
+  right: 42px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 10;
+}
+
+.about-progress-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(177, 158, 239, 0.12);
+  border: 1.5px solid rgba(177, 158, 239, 0.22);
+  transition: all 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: default;
+}
+
+.about-progress-dot.active {
+  background: rgba(177, 158, 239, 0.6);
+  border-color: rgba(177, 158, 239, 0.75);
+  box-shadow:
+    0 0 16px rgba(177, 158, 239, 0.3),
+    0 0 5px rgba(177, 158, 239, 0.15);
+  transform: scale(1.4);
+}
+
+/* Connecting line between dots */
+.about-progress-line {
+  width: 1px;
+  height: 20px;
+  background: rgba(177, 158, 239, 0.12);
+  border-radius: 0.5px;
+}
+
+/* ── Panel wrapper ── */
+
+.about-panel-wrapper {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 840px;
+  padding: 0 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+/* ── Individual panel ── */
+
+.about-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 22px;
+  will-change: transform, opacity;
+}
+
+/* Subheader label */
+.about-subheader {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 4.5px;
+  text-transform: uppercase;
+  color: rgba(177, 158, 239, 0.72);
+  margin-bottom: 2px;
+}
+
+/* Main headline */
+.about-header {
+  font-size: 56px;
+  font-weight: 800;
+  color: #f8fafc;
+  line-height: 1.1;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+/* Decorative divider */
+.about-divider {
+  width: 68px;
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(177, 158, 239, 0.45),
+    transparent
+  );
+  margin: 4px 0;
+}
+
+/* Body text */
+.about-text {
+  font-size: 18px;
+  line-height: 1.82;
+  color: rgba(248, 250, 252, 0.7);
+  max-width: 700px;
+  margin: 0;
+  font-weight: 400;
+  letter-spacing: 0.15px;
+}
+
+/* ── Panel counter (bottom center) ── */
+
+.about-counter {
+  position: absolute;
+  bottom: 34px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  z-index: 5;
+  font-weight: 600;
+  letter-spacing: 3px;
+  user-select: none;
+}
+
+.about-counter-current {
+  color: rgba(177, 158, 239, 0.78);
+  font-size: 20px;
+  transition: color 0.5s ease;
+}
+
+.about-counter-sep {
+  color: rgba(248, 250, 252, 0.2);
+  font-size: 14px;
+}
+
+.about-counter-total {
+  color: rgba(248, 250, 252, 0.32);
+  font-size: 14px;
+}
+
+/* ── Scroll hint (pulsing line) ── */
+
+.about-scroll-hint {
+  position: absolute;
+  bottom: 66px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+}
+
+.about-scroll-hint-line {
+  width: 1px;
+  height: 30px;
+  background: linear-gradient(
+    180deg,
+    rgba(177, 158, 239, 0.4),
+    rgba(177, 158, 239, 0)
+  );
+  animation: about-hint-pulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes about-hint-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.75;
+    transform: translateY(7px);
+  }
+}
+
+/* ================================================================
+   Responsive
+   ================================================================ */
+
+@media (max-width: 1024px) {
+  .about-header {
+    font-size: 46px;
+  }
+
+  .about-text {
+    font-size: 17px;
+    max-width: 600px;
+  }
+
+  .about-panel-wrapper {
+    padding: 0 36px;
+  }
+
+  .about-progress {
+    right: 28px;
+  }
+}
+
+@media (max-width: 768px) {
+  .about-header {
+    font-size: 36px;
+    letter-spacing: -0.2px;
+  }
+
+  .about-text {
+    font-size: 16px;
+    line-height: 1.72;
+    max-width: 520px;
+  }
+
+  .about-subheader {
+    font-size: 11px;
+    letter-spacing: 3.5px;
+  }
+
+  .about-panel-wrapper {
+    padding: 0 24px;
+  }
+
+  .about-progress {
+    right: 16px;
+    gap: 12px;
+  }
+
+  .about-progress-dot {
+    width: 8px;
+    height: 8px;
+  }
+
+  .about-progress-line {
+    height: 14px;
+  }
+
+  .about-divider {
+    width: 48px;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-header {
+    font-size: 28px;
+  }
+
+  .about-text {
+    font-size: 15px;
+    line-height: 1.68;
+  }
+
+  .about-panel-wrapper {
+    padding: 0 18px;
+  }
+
+  .about-counter {
+    bottom: 28px;
+  }
+
+  .about-scroll-hint {
+    bottom: 56px;
+  }
+}
