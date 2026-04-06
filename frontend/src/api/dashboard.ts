@@ -1,4 +1,3 @@
-import api from "@/api/client";
 import mlApi from "@/api/mlClient";
 import {
   AlertItem,
@@ -6,6 +5,7 @@ import {
   FlowPoint,
   HardwareStatusResponse,
   OverviewResponse,
+  RiskLevel,
   TimelinePoint
 } from "@/types/ml";
 
@@ -29,7 +29,7 @@ type BackendTimelinePoint = {
   density_level: string;
 };
 
-type BackendFlow = {
+type BackendFlowPoint = {
   timestamp: string;
   inflow_rate_per_min: number;
   outflow_rate_per_min: number;
@@ -51,14 +51,27 @@ type BackendDecision = {
   confidence: number;
 };
 
+const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : []);
+
+const toRiskLevel = (value: unknown): RiskLevel => {
+  const upper = String(value ?? "").toUpperCase();
+  if (upper === "LOW") return "LOW";
+  if (upper === "MEDIUM") return "MEDIUM";
+  if (upper === "HIGH") return "HIGH";
+  if (upper === "SAFE") return "LOW";
+  if (upper === "MODERATE") return "MEDIUM";
+  if (upper === "CRITICAL") return "HIGH";
+  return "LOW";
+};
+
 export const getOverview = async (): Promise<OverviewResponse> => {
   const res = await mlApi.get<BackendOverview>("/dashboard/overview");
   const data = res.data;
   
   return {
     riskScore: data.risk_score,
-    riskLevel: data.risk_level as any,
-    densityLevel: data.density_level as any,
+    riskLevel: toRiskLevel(data.risk_level),
+    densityLevel: toRiskLevel(data.density_level),
     flow: {
       inflow: 0,
       outflow: 0,
@@ -70,28 +83,41 @@ export const getOverview = async (): Promise<OverviewResponse> => {
 
 export const getTimeline = async (): Promise<TimelinePoint[]> => {
   const res = await mlApi.get<{ points: BackendTimelinePoint[] }>("/dashboard/timeline");
-  return res.data.points.map((p) => ({
+  return asArray<BackendTimelinePoint>(res.data?.points).map((p) => ({
     timestamp: p.timestamp,
     riskScore: p.risk_score,
-    densityLevel: p.density_level as any
+    densityLevel: toRiskLevel(p.density_level)
   }));
 };
 
 export const getFlow = async (): Promise<FlowPoint[]> => {
-  const res = await mlApi.get<BackendFlow>("/dashboard/flow");
-  const data = res.data;
+  const res = await mlApi.get<any>("/dashboard/flow");
+  const points = asArray<BackendFlowPoint>(res.data?.points);
   
-  return [{
-    timestamp: data.timestamp,
-    inflow: data.inflow_rate_per_min,
-    outflow: data.outflow_rate_per_min,
-    net: data.net_flow_per_min
-  }];
+  // Handle gracefully whether backend returns { points: [...] } or the old single object
+  if (points.length) {
+    return points.map((p) => ({
+      timestamp: p.timestamp,
+      inflow: p.inflow_rate_per_min,
+      outflow: p.outflow_rate_per_min,
+      net: p.net_flow_per_min
+    }));
+  } else if (res.data && typeof res.data.inflow_rate_per_min === "number") {
+    // Fallback for old backend format before restart
+    return [{
+      timestamp: res.data.timestamp,
+      inflow: res.data.inflow_rate_per_min,
+      outflow: res.data.outflow_rate_per_min,
+      net: res.data.net_flow_per_min
+    }];
+  }
+
+  return [];
 };
 
 export const getAlerts = async (): Promise<AlertItem[]> => {
   const res = await mlApi.get<{ alerts: BackendAlert[] }>("/dashboard/alerts");
-  return res.data.alerts.map((a, idx) => ({
+  return asArray<BackendAlert>(res.data?.alerts).map((a, idx) => ({
     id: `alert-${idx}-${a.timestamp}`,
     severity: a.alert_severity.toLowerCase() === 'critical' ? 'critical' : 
               a.alert_severity.toLowerCase() === 'elevated' ? 'warning' : 'info',

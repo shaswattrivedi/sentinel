@@ -29,7 +29,7 @@ export const CrowdDensityCard: React.FC<Props> = ({ density, hardware, loading }
     );
   }
 
-  const info = densityText[density];
+  const info = densityText[density] ?? densityText.LOW;
 
   return (
     <>

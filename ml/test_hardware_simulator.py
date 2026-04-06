@@ -13,10 +13,11 @@ Scenarios:
 5. MULTI_ZONE_CRITICAL - Both zones critical
 6. WAVE_PATTERN - Oscillating crowd density
 7. RANDOM - Randomized realistic data
+8. CROWD_FLOW - Simulate crowd moving Z1->Z2->Z3
 
 Usage:
     python test_hardware_simulator.py                    # Interactive mode
-    python test_hardware_simulator.py --scenario=2       # Run specific scenario
+    python test_hardware_simulator.py --scenario=8       # Run specific scenario
     python test_hardware_simulator.py --scenario=7 --duration=60  # Random for 60s
 """
 
@@ -190,6 +191,34 @@ class SensorSimulator:
             random.uniform(0, 100),
         )
 
+    def scenario_crowd_flow(self) -> tuple:
+        """Scenario 8: Crowd Flow - Directional movement from Zone 1 to Zone 3."""
+        # Simulated directional flow where a crowd enters Z1 -> Z2 -> Z3 -> Exits
+        t = self.iteration % 40  # 40 iterations per cycle
+        
+        # Base ambient
+        z1 = 1
+        z2 = 10.0
+        z3 = 10.0
+        
+        # Zone 1 (Camera) spikes first as people enter
+        if 0 <= t < 15:
+            z1 = int(1 + math.sin((t / 15.0) * math.pi) * 15)
+        
+        # Zone 2 (Density) receives them delayed
+        if 5 <= t < 25:
+            z2 = 10.0 + math.sin(((t - 5) / 20.0) * math.pi) * 75.0
+            
+        # Zone 3 (Density) receives them last before they exit
+        if 15 <= t < 35:
+            z3 = 10.0 + math.sin(((t - 15) / 20.0) * math.pi) * 80.0
+            
+        return (
+            max(0, z1 + random.randint(-1, 1)),
+            max(0.0, min(100.0, z2 + random.uniform(-3, 3))),
+            max(0.0, min(100.0, z3 + random.uniform(-3, 3))),
+        )
+
 
 def interactive_menu():
     """Display interactive scenario selection menu."""
@@ -204,19 +233,20 @@ def interactive_menu():
     print("  5. MULTI_CRITICAL  - Both zones critical (emergency)")
     print("  6. WAVE_PATTERN    - Oscillating crowd density")
     print("  7. RANDOM          - Randomized realistic data")
+    print("  8. CROWD_FLOW      - Simulate crowd moving Z1->Z2->Z3")
     print("  0. EXIT\n")
 
     while True:
         try:
-            choice = input("Enter scenario number (0-7): ").strip()
+            choice = input("Enter scenario number (0-8): ").strip()
             if choice == "0":
                 return None, 0
             num = int(choice)
-            if 1 <= num <= 7:
+            if 1 <= num <= 8:
                 duration = input("Duration in seconds [30]: ").strip()
                 duration = int(duration) if duration else 30
                 return num, duration
-            print("Please enter a number between 0 and 7")
+            print("Please enter a number between 0 and 8")
         except ValueError:
             print("Please enter a valid number")
         except KeyboardInterrupt:
@@ -225,7 +255,7 @@ def interactive_menu():
 
 def main():
     parser = argparse.ArgumentParser(description="SENTINEL Hardware Simulator")
-    parser.add_argument("--scenario", type=int, help="Scenario number (1-7)")
+    parser.add_argument("--scenario", type=int, help="Scenario number (1-8)")
     parser.add_argument("--duration", type=int, default=30, help="Duration in seconds")
     parser.add_argument("--interval", type=float, default=2.0, help="Interval between readings")
     args = parser.parse_args()
@@ -240,6 +270,7 @@ def main():
         5: ("MULTI_CRITICAL", simulator.scenario_multi_critical),
         6: ("WAVE_PATTERN", simulator.scenario_wave),
         7: ("RANDOM", simulator.scenario_random),
+        8: ("CROWD_FLOW", simulator.scenario_crowd_flow),
     }
 
     if args.scenario:

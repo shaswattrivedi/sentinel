@@ -25,7 +25,7 @@ def get_timeline(agg_service=Depends(get_aggregation_service)):
 
 @router.get("/dashboard/flow", response_model=FlowResponse)
 def get_flow(agg_service=Depends(get_aggregation_service)):
-    return agg_service.flow()
+    return {"points": agg_service.flow()}
 
 
 @router.get("/dashboard/alerts", response_model=AlertsResponse)

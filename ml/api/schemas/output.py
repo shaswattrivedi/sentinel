@@ -66,11 +66,15 @@ class TimelineResponse(BaseModel):
     points: List[TimelinePoint]
 
 
-class FlowResponse(BaseModel):
+class FlowPointResponse(BaseModel):
     timestamp: datetime
     inflow_rate_per_min: float
     outflow_rate_per_min: float
     net_flow_per_min: float
+
+
+class FlowResponse(BaseModel):
+    points: List[FlowPointResponse]
 
 
 class AlertItem(BaseModel):

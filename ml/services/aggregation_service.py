@@ -86,27 +86,26 @@ class AggregationService:
             )
         return points
 
-    def flow(self) -> dict:
-        outputs = self.store.get_recent_outputs(limit=2)
+    def flow(self, limit: int = 50) -> List[dict]:
+        outputs = self.store.get_recent_outputs(limit=limit + 1)
         if len(outputs) < 2:
-            return {
-                "timestamp": datetime.now(tz=outputs[0].timestamp.tzinfo) if outputs else datetime.now(),
-                "inflow_rate_per_min": 0.0,
-                "outflow_rate_per_min": 0.0,
-                "net_flow_per_min": 0.0,
-            }
-        older, newer = outputs[-2], outputs[-1]
-        delta_count = newer.fused_crowd_count - older.fused_crowd_count
-        delta_seconds = max((newer.timestamp - older.timestamp).total_seconds(), 1.0)
-        rate_per_min = (delta_count / delta_seconds) * 60.0
-        inflow = max(rate_per_min, 0.0)
-        outflow = max(-rate_per_min, 0.0)
-        return {
-            "timestamp": newer.timestamp,
-            "inflow_rate_per_min": inflow,
-            "outflow_rate_per_min": outflow,
-            "net_flow_per_min": rate_per_min,
-        }
+            return []
+            
+        flow_points = []
+        for i in range(1, len(outputs)):
+            older, newer = outputs[i - 1], outputs[i]
+            delta_count = newer.fused_crowd_count - older.fused_crowd_count
+            delta_seconds = max((newer.timestamp - older.timestamp).total_seconds(), 1.0)
+            rate_per_min = (delta_count / delta_seconds) * 60.0
+            inflow = max(rate_per_min, 0.0)
+            outflow = max(-rate_per_min, 0.0)
+            flow_points.append({
+                "timestamp": newer.timestamp,
+                "inflow_rate_per_min": inflow,
+                "outflow_rate_per_min": outflow,
+                "net_flow_per_min": rate_per_min,
+            })
+        return flow_points
 
     def alerts(self, limit: int = 50) -> List[dict]:
         alert_outputs = self.store.get_recent_alerts(limit=limit)
