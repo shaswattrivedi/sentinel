@@ -181,6 +181,7 @@
 
 /* Subheader label */
 .about-subheader {
+  font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 4.5px;
@@ -191,8 +192,9 @@
 
 /* Main headline */
 .about-header {
+  font-family: var(--font-heading);
   font-size: 56px;
-  font-weight: 800;
+  font-weight: 700;
   color: #f8fafc;
   line-height: 1.1;
   letter-spacing: -0.3px;
@@ -215,18 +217,20 @@
 
 /* Body text */
 .about-text {
+  font-family: var(--font-body);
   font-size: 18px;
   line-height: 1.82;
-  color: rgba(248, 250, 252, 0.7);
+  color: rgba(248, 250, 252, 0.78);
   max-width: 700px;
   margin: 0;
-  font-weight: 400;
+  font-weight: 500;
   letter-spacing: 0.15px;
 }
 
 /* ── Panel counter (bottom center) ── */
 
 .about-counter {
+  font-family: var(--font-ui);
   position: absolute;
   bottom: 34px;
   left: 50%;

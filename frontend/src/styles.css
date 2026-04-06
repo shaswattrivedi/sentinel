@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 @font-face {
   font-family: "Plus Jakarta Sans";
   src: url("/Plus_Jakarta_Sans/PlusJakartaSans-VariableFont_wght.ttf") format("truetype");
@@ -102,18 +104,21 @@
   font-display: swap;
 }
 
+:root {
+  --font-heading: Tahoma, "Segoe UI", Arial, sans-serif;
+  --font-body: Tahoma, "Segoe UI", Arial, sans-serif;
+  --font-ui: "Performa", "Plus Jakarta Sans", sans-serif;
+  font-family: var(--font-body);
+}
+
 html, body {
   margin: 0;
   padding: 0;
-  font-family: "Plus Jakarta Sans", "Satoshi", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-body);
   background: #0b0a15;
   color: #f8fafc;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-:root {
-  font-family: "Plus Jakarta Sans", "Satoshi", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 body, * {
@@ -121,14 +126,17 @@ body, * {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: inherit;
+  font-family: var(--font-heading);
+  font-weight: 700;
 }
 
-/* Enforce Plus Jakarta across all UI surface, including nested sections and forms */
-.app-shell, .app-content, .app-shell *, .app-content *,
-button, input, select, textarea, a, p, span, div,
-h1, h2, h3, h4, h5, h6, label, li, strong, em {
-  font-family: "Plus Jakarta Sans", "Satoshi", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+/* Keep heading/content typography on system UI; preserve branded UI chrome for controls/nav */
+button, input, select, textarea, label {
+  font-family: var(--font-ui);
+}
+
+nav, nav *, [role="navigation"], [role="navigation"] * {
+  font-family: var(--font-ui);
 }
 
 * {
@@ -237,10 +245,16 @@ input {
 }
 
 .stats-heading {
+  font-family: var(--font-heading);
   font-size: 62px;
-  font-weight: 800;
+  font-weight: 700;
   color: #f8fafc;
   line-height: 1.2;
+}
+
+.use-cases-heading {
+  font-family: var(--font-heading);
+  font-weight: 700;
 }
 
 @media (max-width: 768px) {

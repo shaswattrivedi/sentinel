@@ -113,6 +113,7 @@ const Landing: React.FC = () => {
 
   const [productTab, setProductTab] = useState(0);
   const productTabs = ["THE PROBLEM", "CURRENT SOLUTIONS", "SENTINEL'S ADVANTAGE"] as const;
+  const performaTabStack = "Performa, 'Plus Jakarta Sans', sans-serif";
 
   /* ── Scroll-aware navbar hide/show ── */
   const [navVisible, setNavVisible] = useState(true);
@@ -401,7 +402,14 @@ const Landing: React.FC = () => {
 
       {/* Product Section — Tab-based */}
       <section id="product-section" style={{ display: "flex", flexDirection: "column", gap: 0, scrollMarginTop: 120 }}>
-        <div style={{ fontSize: 68, fontWeight: 800, textAlign: "center", marginBottom: 36 }}>
+        <div
+          style={{
+            fontSize: 68,
+            fontWeight: 800,
+            textAlign: "center",
+            marginBottom: 36
+          }}
+        >
           <TextType
             text={["Why Crowd Safety Fails?", "Why Crowd Safety Fails?", "Why Crowd Safety Fails?"]}
             typingSpeed={70}
@@ -424,7 +432,10 @@ const Landing: React.FC = () => {
             justifyContent: "center",
             gap: 10,
             marginBottom: 44,
-            flexWrap: "wrap"
+            flexWrap: "wrap",
+            maxWidth: 1180,
+            marginLeft: "auto",
+            marginRight: "auto"
           }}
         >
           {productTabs.map((label, i) => (
@@ -440,7 +451,6 @@ const Landing: React.FC = () => {
               }}
               style={{
                 padding: "13px 28px",
-                marginRight: 10,
                 borderRadius: 10,
                 border: productTab === i
                   ? "1px solid rgba(177, 158, 239, 0.55)"
@@ -450,9 +460,14 @@ const Landing: React.FC = () => {
                   : "rgba(255, 255, 255, 0.04)",
                 color: productTab === i ? "#f8fafc" : "rgba(248, 250, 252, 0.5)",
                 cursor: "pointer",
+                fontFamily: performaTabStack,
                 fontWeight: 700,
                 fontSize: 14,
                 letterSpacing: 0.8,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                lineHeight: 1,
                 transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
                 boxShadow: productTab === i
                   ? "0 0 20px rgba(177, 158, 239, 0.12), inset 0 0 12px rgba(177, 158, 239, 0.06)"
@@ -629,7 +644,7 @@ const Landing: React.FC = () => {
                   <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", textAlign: "center", paddingBottom: 12 }}>
                     Reaction to Prediction
                   </div>
-                  <div style={{ color: "rgba(248, 250, 252, 0.78)", fontSize: 17, lineHeight: 1.7 }}>
+                  <div style={{ color: "rgba(248, 250, 252, 0.78)", fontSize: 17, lineHeight: 1.7, fontWeight: 400 }}>
                     • SENTINEL combines distributed sensing with flow-aware machine learning to continuously analyze crowd dynamics in real time.
                     <br /><br />
                     • Congestion patterns, density imbalances, and directional conflicts are identified before risk becomes visible.
