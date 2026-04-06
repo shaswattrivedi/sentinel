@@ -105,9 +105,15 @@
 }
 
 :root {
-  --font-heading: Tahoma, "Segoe UI", Arial, sans-serif;
-  --font-body: Tahoma, "Segoe UI", Arial, sans-serif;
+  --font-heading: Tahoma, sans-serif;
+  --font-body: Inter, Roboto, sans-serif;
   --font-ui: "Performa", "Plus Jakarta Sans", sans-serif;
+  --color-bg: #0b0a14;
+  --color-card: rgba(26, 25, 38, 0.8);
+  --color-critical: #ff4d4d;
+  --color-warning: #ffb347;
+  --color-safe: #00e676;
+  --color-info: #4da3ff;
   font-family: var(--font-body);
 }
 
@@ -188,14 +194,15 @@ input {
   z-index: 1;
 }
 
-/* Glassmorphism card for forms */
+/* Glassmorphism card */
 .glass-card {
-  background: rgba(11, 10, 21, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(177, 158, 239, 0.2);
+  background: var(--color-card);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .glass-card h2 {

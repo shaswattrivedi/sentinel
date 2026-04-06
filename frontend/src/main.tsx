@@ -10,6 +10,35 @@ import Landing from "@/pages/Landing";
 import Aurora from "@/components/Aurora";
 import "./styles.css";
 
+// Clean up stale tokens on app start to prevent refresh loops
+// This helps when backend restarts and old tokens become invalid
+function cleanupStaleTokens() {
+  const accessToken = localStorage.getItem("access_token");
+  const refreshToken = localStorage.getItem("refresh_token");
+  
+  if (accessToken || refreshToken) {
+    try {
+      // Try to decode token (basic check)
+      if (accessToken) {
+        const parts = accessToken.split('.');
+        if (parts.length !== 3) {
+          // Invalid JWT format
+          console.warn("Invalid token format detected, clearing...");
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+        }
+      }
+    } catch (err) {
+      // If any error, clear tokens
+      console.warn("Token validation failed, clearing...");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+    }
+  }
+}
+
+cleanupStaleTokens();
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <div className="app-shell">

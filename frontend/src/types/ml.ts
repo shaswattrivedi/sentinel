@@ -40,8 +40,36 @@ export type DecisionResponse = {
   updatedAt: string;
 };
 
+export type ZoneStatus = {
+  z1: string;
+  z2: string;
+  z3: string;
+};
+
+export type HardwareCommands = {
+  z2_led: "green" | "yellow" | "red" | "gray";
+  z3_led: "green" | "yellow" | "red" | "gray";
+  z2_buzzer: boolean;
+  z3_buzzer: boolean;
+};
+
+export type TrendPrediction = {
+  trend: "INCREASING" | "STABLE" | "DECREASING" | "UNKNOWN";
+  prediction: "LOW_TREND" | "MODERATE_TREND" | "HIGH_RISK" | "NO_DATA";
+  predicted_density: number;
+  confidence: number;
+};
+
+export type HardwareStatusResponse = {
+  timestamp: string | null;
+  zone_status: ZoneStatus;
+  hardware_commands: HardwareCommands;
+  trend_prediction: TrendPrediction;
+};
+
 export type OverviewPayload = { data: OverviewResponse };
 export type TimelinePayload = { data: TimelinePoint[] };
 export type FlowPayload = { data: FlowPoint[] };
 export type AlertsPayload = { data: AlertItem[] };
 export type DecisionPayload = { data: DecisionResponse };
+export type HardwareStatusPayload = { data: HardwareStatusResponse };

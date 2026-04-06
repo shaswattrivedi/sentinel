@@ -26,11 +26,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = useCallback(async () => {
     try {
+      // Check if tokens exist before attempting
+      const hasToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+      if (!hasToken) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+      
       // Node API exposes current user at /users/me (per OpenAPI), not /auth/profile
       const res = await api.get("/users/me");
       setUser(res.data?.data ?? null);
     } catch (err) {
+      // If fetch fails, clear user and tokens
       setUser(null);
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
     } finally {
       setLoading(false);
     }

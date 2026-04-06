@@ -50,8 +50,8 @@ export const FlowChart: React.FC<Props> = ({ data, loading }) => {
   return (
     <div className="glass-card" style={{ padding: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-        <div style={{ color: "rgba(248, 250, 252, 0.75)", fontSize: 12 }}>Crowd Flow</div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center", color: "rgba(248, 250, 252, 0.7)", fontSize: 12 }}>
+        <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "2px" }}>CROWD FLOW</div>
+        <div style={{ display: "flex", gap: 12, alignItems: "center", color: "rgba(248, 250, 252, 0.7)", fontSize: 14 }}>
           <Legend color="#38bdf8" label="Inflow" />
           <Legend color="#f97316" label="Outflow" />
           <Legend color="#a855f7" label="Net" />

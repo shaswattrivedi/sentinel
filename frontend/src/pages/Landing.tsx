@@ -80,7 +80,7 @@ const Card: React.FC<{ title: string; children: React.ReactNode }> = ({ title, c
         textAlign: "left"
       }}
     >
-      <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 24, textAlign: "center", letterSpacing: 0.2 }}>{title}</div>
+      <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 24, textAlign: "center", letterSpacing: 0.2, fontFamily: "var(--font-heading)" }}>{title}</div>
       <div style={{ color: "rgba(248, 250, 252, 0.82)", fontSize: 15.5, lineHeight: 1.6, display: "flex", flexDirection: "column", gap: 9 }}>{children}</div>
     </div>
   </SpotlightCard>
@@ -297,7 +297,7 @@ const Landing: React.FC = () => {
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 22, textAlign: "left", alignItems: "flex-start", paddingLeft: 18 }}>
-            <div style={{ fontSize: 74, fontWeight: 800, letterSpacing: 0.2, lineHeight: 1.25 }}>
+            <div style={{ fontSize: 74, fontWeight: 800, letterSpacing: 0.2, lineHeight: 1.25, fontFamily: "var(--font-heading)" }}>
               <ShinyText
                 text="Crowd Safety, Reimagined."
                 speed={2.6}
@@ -406,6 +406,7 @@ const Landing: React.FC = () => {
           style={{
             fontSize: 68,
             fontWeight: 800,
+            fontFamily: "var(--font-heading)",
             textAlign: "center",
             marginBottom: 36
           }}
@@ -520,7 +521,7 @@ const Landing: React.FC = () => {
                 }}
               >
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                  <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", textAlign: "center", paddingBottom: 12 }}>The Root Cause</div>
+                  <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", textAlign: "center", paddingBottom: 12, fontFamily: "var(--font-heading)" }}>The Root Cause</div>
                   <div style={{ color: "rgba(248, 250, 252, 0.78)", fontSize: 17, lineHeight: 1.7 }}>
                     Crowd risk rarely originates from panic; it develops through early-stage imbalances such as uneven flow, localized density accumulation, and delayed response. As these conditions intensify, safety diminishes and decision windows narrow. By the time risk becomes visible, reaction time has already collapsed, forcing response into a reactive state.
                     <br /><br />
@@ -563,7 +564,7 @@ const Landing: React.FC = () => {
                 transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
                 style={{ maxWidth: 960, margin: "0 auto" }}
               >
-                <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", marginBottom: 26, textAlign: "center" }}>
+                <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", marginBottom: 26, textAlign: "center", fontFamily: "var(--font-heading)" }}>
                   Why Existing Systems Fall Short
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 18, textAlign: "center", marginTop: 44, cursor: "default"}}>
@@ -592,7 +593,7 @@ const Landing: React.FC = () => {
                         }}
                       >
                         <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
-                          <div style={{ fontWeight: 800, fontSize: 18, color: "#f8fafc" }}>{item.title}</div>
+                          <div style={{ fontWeight: 800, fontSize: 18, color: "#f8fafc", fontFamily: "var(--font-heading)" }}>{item.title}</div>
                           <div style={{ color: "rgba(248, 250, 252, 0.72)", fontSize: 14.5, lineHeight: 1.7 }}>{item.desc}</div>
                         </div>
                       </SpotlightCard>
@@ -641,7 +642,7 @@ const Landing: React.FC = () => {
                   </div>
                 </motion.div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                  <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", textAlign: "center", paddingBottom: 12 }}>
+                  <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", textAlign: "center", paddingBottom: 12, fontFamily: "var(--font-heading)" }}>
                     Reaction to Prediction
                   </div>
                   <div style={{ color: "rgba(248, 250, 252, 0.78)", fontSize: 17, lineHeight: 1.7, fontWeight: 400 }}>

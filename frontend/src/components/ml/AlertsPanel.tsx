@@ -3,23 +3,32 @@ import { AlertItem } from "@/types/ml";
 import { Skeleton } from "@/components/ml/Skeleton";
 
 const severityColor: Record<AlertItem["severity"], string> = {
-  info: "#38bdf8",
-  warning: "#f59e0b",
-  critical: "#ef4444"
+  info: "var(--color-info)",
+  warning: "var(--color-warning)",
+  critical: "var(--color-critical)"
 };
 
 type Props = {
   alerts?: AlertItem[];   // 🔹 made optional
   loading?: boolean;
+  fillHeight?: boolean;
 };
 
-export const AlertsPanel: React.FC<Props> = ({ alerts, loading }) => {
+export const AlertsPanel: React.FC<Props> = ({ alerts, loading, fillHeight }) => {
   const safeAlerts: AlertItem[] = alerts ?? []; // 🔹 null-safe
+  const panelStyle = {
+    padding: 20,
+    height: fillHeight ? "100%" : "clamp(220px, 30vh, 260px)",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column" as const,
+    minHeight: 0
+  };
 
   if (loading) {
     return (
-      <div className="glass-card" style={{ padding: 16 }}>
-        <Skeleton height={140} />
+      <div className="glass-card" style={panelStyle}>
+        <Skeleton height="100%" />
       </div>
     );
   }
@@ -28,7 +37,7 @@ export const AlertsPanel: React.FC<Props> = ({ alerts, loading }) => {
     return (
       <div
         className="glass-card"
-        style={{ padding: 16, color: "#f8fafc" }}
+        style={{ ...panelStyle, color: "#f8fafc" }}
       >
         No active alerts
       </div>
@@ -36,53 +45,63 @@ export const AlertsPanel: React.FC<Props> = ({ alerts, loading }) => {
   }
 
   return (
-    <div className="glass-card" style={{ padding: 16 }}>
+    <div className="glass-card" style={panelStyle}>
       <div
         style={{
-          color: "rgba(248, 250, 252, 0.75)",
-          fontSize: 12,
-          marginBottom: 12
+          color: "rgba(248, 250, 252, 0.5)",
+          fontSize: "11px",
+          textTransform: "uppercase",
+          letterSpacing: "2px",
+          marginBottom: 16
         }}
       >
-        Alerts
+        ALERTS FEED
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, overflowY: "auto", flex: 1, paddingRight: 4 }}>
         {safeAlerts.map((alert) => (
           <div
             key={alert.id}
             style={{
-              border: `1px solid ${severityColor[alert.severity]}30`,
-              background: `${severityColor[alert.severity]}10`,
+              border: `1px solid color-mix(in srgb, ${severityColor[alert.severity]} 20%, transparent)`,
               borderRadius: 12,
-              padding: 12
+              padding: 16,
+              background: `color-mix(in srgb, ${severityColor[alert.severity]} 8%, transparent)`,
+              flexShrink: 0
             }}
           >
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "center"
+                alignItems: "center",
+                marginBottom: 6
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span
                   style={{
-                    width: 10,
-                    height: 10,
+                    width: 8,
+                    height: 8,
                     borderRadius: 999,
-                    background: severityColor[alert.severity]
+                    background: severityColor[alert.severity],
+                    boxShadow: `0 0 6px ${severityColor[alert.severity]}`
                   }}
                 />
-                <span style={{ color: "#f8fafc", fontWeight: 600 }}>
+                <span style={{ 
+                  color: severityColor[alert.severity], 
+                  fontWeight: 800,
+                  fontSize: 13,
+                  letterSpacing: "1px"
+                }}>
                   {alert.severity.toUpperCase()}
                 </span>
               </div>
 
               <span
                 style={{
-                  color: "rgba(248, 250, 252, 0.6)",
-                  fontSize: 12
+                  color: "rgba(248, 250, 252, 0.5)",
+                  fontSize: 13
                 }}
               >
                 {alert.timestamp
@@ -94,7 +113,8 @@ export const AlertsPanel: React.FC<Props> = ({ alerts, loading }) => {
             <div
               style={{
                 color: "rgba(248, 250, 252, 0.8)",
-                marginTop: 6
+                fontSize: 16,
+                lineHeight: 1.55
               }}
             >
               {alert.message}
