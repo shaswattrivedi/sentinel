@@ -244,7 +244,11 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* RIGHT COLUMN */}
-            <AlertsPanel alerts={alerts} loading={loading} fillHeight />
+            <div style={{ position: "relative", minHeight: 0 }}>
+              <div style={{ position: "absolute", inset: 0 }}>
+                <AlertsPanel alerts={alerts} loading={loading} fillHeight />
+              </div>
+            </div>
           </div>
         )}
       </div>
