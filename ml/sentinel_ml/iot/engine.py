@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from sentinel_ml.utils.time_utils import coerce_timestamp
 
@@ -9,6 +9,11 @@ SAFE = "SAFE"
 MODERATE = "MODERATE"
 CRITICAL = "CRITICAL"
 
+# LED Colors matching traffic signal module
+LED_GREEN = "green"
+LED_YELLOW = "yellow"
+LED_RED = "red"
+
 
 @dataclass
 class IoTDerivedFeatures:
@@ -16,6 +21,24 @@ class IoTDerivedFeatures:
     density_gradient: float
     zone_disparity: float
     cam_density_factor: float
+
+
+@dataclass
+class HardwareCommands:
+    """Commands to send back to ESP32 for LED and buzzer control."""
+    z2_led: str
+    z3_led: str
+    z2_buzzer: bool
+    z3_buzzer: bool
+
+
+@dataclass
+class TrendPrediction:
+    """Pattern ML prediction for crowd density trends."""
+    trend: str  # INCREASING, STABLE, DECREASING
+    prediction: str  # LOW_TREND, MODERATE_TREND, HIGH_RISK
+    predicted_density: float
+    confidence: float
 
 
 class IoTRiskEngine:
@@ -130,6 +153,61 @@ class IoTRiskEngine:
         sentence = ", and ".join(observations)
         return sentence[:1].upper() + sentence[1:] + "."
 
+    def _status_to_led(self, status: str) -> str:
+        """Convert zone status to traffic signal LED color."""
+        if status == CRITICAL:
+            return LED_RED
+        if status == MODERATE:
+            return LED_YELLOW
+        return LED_GREEN
+
+    def _should_activate_buzzer(self, status: str) -> bool:
+        """Determine if buzzer should be active (only for CRITICAL)."""
+        return status == CRITICAL
+
+    def _compute_hardware_commands(self, zone_status: Dict[str, str]) -> HardwareCommands:
+        """Generate hardware commands for ESP32 LED/Buzzer control."""
+        return HardwareCommands(
+            z2_led=self._status_to_led(zone_status["z2"]),
+            z3_led=self._status_to_led(zone_status["z3"]),
+            z2_buzzer=self._should_activate_buzzer(zone_status["z2"]),
+            z3_buzzer=self._should_activate_buzzer(zone_status["z3"]),
+        )
+
+    def _compute_trend_prediction(self, features: IoTDerivedFeatures) -> TrendPrediction:
+        """Pattern ML model: predict future crowd density trend."""
+        avg = features.avg_density
+        gradient = features.density_gradient
+
+        # Determine trend direction based on density gradient
+        if gradient > 5:
+            trend = "INCREASING"
+        elif gradient < -5:
+            trend = "DECREASING"
+        else:
+            trend = "STABLE"
+
+        # Predict future density (simple linear projection + current avg)
+        predicted_density = min(100.0, max(0.0, avg + (gradient * 0.5)))
+
+        # Compute prediction label
+        if avg > 70 or predicted_density > 70:
+            prediction = "HIGH_RISK"
+            confidence = 0.85
+        elif avg > 40 or predicted_density > 40:
+            prediction = "MODERATE_TREND"
+            confidence = 0.75
+        else:
+            prediction = "LOW_TREND"
+            confidence = 0.90
+
+        return TrendPrediction(
+            trend=trend,
+            prediction=prediction,
+            predicted_density=round(predicted_density, 2),
+            confidence=confidence,
+        )
+
     def predict(
         self,
         z1_cam_count: int,
@@ -147,6 +225,8 @@ class IoTRiskEngine:
         }
         system_status = self._master_status(zone_status)
         risk_score = self._compute_risk_score(features)
+        hardware_commands = self._compute_hardware_commands(zone_status)
+        trend_prediction = self._compute_trend_prediction(features)
 
         return {
             "risk_score": risk_score,
@@ -158,5 +238,17 @@ class IoTRiskEngine:
                 "density_gradient": round(features.density_gradient, 2),
                 "zone_disparity": round(features.zone_disparity, 2),
                 "cam_density_factor": round(features.cam_density_factor, 3),
+            },
+            "hardware_commands": {
+                "z2_led": hardware_commands.z2_led,
+                "z3_led": hardware_commands.z3_led,
+                "z2_buzzer": hardware_commands.z2_buzzer,
+                "z3_buzzer": hardware_commands.z3_buzzer,
+            },
+            "trend_prediction": {
+                "trend": trend_prediction.trend,
+                "prediction": trend_prediction.prediction,
+                "predicted_density": trend_prediction.predicted_density,
+                "confidence": trend_prediction.confidence,
             },
         }

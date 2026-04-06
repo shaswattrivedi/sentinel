@@ -4,10 +4,11 @@ from api.schemas.output import (
     DecisionResponse,
     FlowResponse,
     HealthResponse,
+    HardwareStatusResponse,
     OverviewResponse,
     TimelineResponse,
 )
-from utils.deps import get_aggregation_service
+from utils.deps import get_aggregation_service, get_store
 
 router = APIRouter(tags=["dashboard"])
 
@@ -40,3 +41,22 @@ def get_decision(agg_service=Depends(get_aggregation_service)):
 @router.get("/dashboard/health", response_model=HealthResponse)
 def get_health(agg_service=Depends(get_aggregation_service)):
     return agg_service.health()
+
+
+@router.get("/dashboard/hardware", response_model=HardwareStatusResponse)
+def get_hardware_status(store=Depends(get_store)):
+    """Get current hardware status (zone statuses, LED colors, buzzer states, predictions)."""
+    hw = store.hardware_status
+    if hw.last_updated is None:
+        return {
+            "timestamp": None,
+            "zone_status": {"z1": "UNKNOWN", "z2": "UNKNOWN", "z3": "UNKNOWN"},
+            "hardware_commands": {"z2_led": "gray", "z3_led": "gray", "z2_buzzer": False, "z3_buzzer": False},
+            "trend_prediction": {"trend": "UNKNOWN", "prediction": "NO_DATA", "predicted_density": 0.0, "confidence": 0.0},
+        }
+    return {
+        "timestamp": hw.last_updated,
+        "zone_status": hw.zone_status,
+        "hardware_commands": hw.hardware_commands,
+        "trend_prediction": hw.trend_prediction,
+    }

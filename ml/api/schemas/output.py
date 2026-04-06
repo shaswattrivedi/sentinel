@@ -9,12 +9,38 @@ class ZoneStatusResponse(BaseModel):
     z3: str
 
 
+class HardwareCommandsResponse(BaseModel):
+    """Commands to send back to ESP32 for LED/Buzzer control."""
+    z2_led: str = Field(description="LED color for Zone 2: green/yellow/red")
+    z3_led: str = Field(description="LED color for Zone 3: green/yellow/red")
+    z2_buzzer: bool = Field(description="Buzzer state for Zone 2")
+    z3_buzzer: bool = Field(description="Buzzer state for Zone 3")
+
+
+class TrendPredictionResponse(BaseModel):
+    """Pattern ML prediction for future crowd density."""
+    trend: str = Field(description="INCREASING/STABLE/DECREASING")
+    prediction: str = Field(description="LOW_TREND/MODERATE_TREND/HIGH_RISK")
+    predicted_density: float = Field(ge=0.0, le=100.0)
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
 class PredictResponse(BaseModel):
     risk_score: float = Field(ge=0.0, le=100.0)
     system_status: str
     zone_status: ZoneStatusResponse
     reason: str
     features: dict
+    hardware_commands: HardwareCommandsResponse = Field(description="Commands for ESP32 hardware")
+    trend_prediction: TrendPredictionResponse = Field(description="ML-based trend prediction")
+
+
+class HardwareStatusResponse(BaseModel):
+    """Current hardware status for dashboard display."""
+    timestamp: Optional[datetime] = None
+    zone_status: ZoneStatusResponse = Field(default_factory=lambda: ZoneStatusResponse(z1="UNKNOWN", z2="UNKNOWN", z3="UNKNOWN"))
+    hardware_commands: HardwareCommandsResponse = Field(default_factory=lambda: HardwareCommandsResponse(z2_led="gray", z3_led="gray", z2_buzzer=False, z3_buzzer=False))
+    trend_prediction: TrendPredictionResponse = Field(default_factory=lambda: TrendPredictionResponse(trend="UNKNOWN", prediction="NO_DATA", predicted_density=0.0, confidence=0.0))
 
 
 class OverviewResponse(BaseModel):

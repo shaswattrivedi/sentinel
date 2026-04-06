@@ -109,7 +109,16 @@ class AggregationService:
         }
 
     def alerts(self, limit: int = 50) -> List[dict]:
-        return self.store.alerts or []
+        alert_outputs = self.store.get_recent_alerts(limit=limit)
+        return [
+            {
+                "timestamp": output.timestamp,
+                "alert_status": output.alert_status,
+                "alert_severity": output.alert_severity,
+                "explanation": output.explanation_text,  # Map explanation_text to explanation
+            }
+            for output in alert_outputs
+        ]
 
     def decision(self) -> dict:
         latest = self._latest()
