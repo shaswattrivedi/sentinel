@@ -154,3 +154,7 @@ export const getHardwareStatus = async (): Promise<HardwareStatusResponse> => {
   const res = await mlApi.get<HardwareStatusResponse>("/dashboard/hardware");
   return res.data;
 };
+
+export const resetDashboardState = async (): Promise<void> => {
+  await mlApi.post("/dashboard/reset");
+};

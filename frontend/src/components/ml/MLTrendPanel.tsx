@@ -36,6 +36,7 @@ export const MLTrendPanel: React.FC<Props> = ({ hardware, loading }) => {
     predicted_density: 0,
     confidence: 0,
   };
+  const predictedDensity = Math.max(0, Math.min(100, Number(trend.predicted_density) || 0));
 
   const color = trendColorMap[trend.trend] ?? "rgba(248, 250, 252, 0.5)";
 
@@ -52,7 +53,7 @@ export const MLTrendPanel: React.FC<Props> = ({ hardware, loading }) => {
         <div style={{ textAlign: "right" }}>
           <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: 14, marginBottom: 4 }}>Predicted Density</div>
           <div style={{ color: predictionColorMap[trend.prediction] ?? "rgba(248, 250, 252, 0.5)", fontWeight: 700, fontSize: 28 }}>
-            {(trend.predicted_density * 100).toFixed(0)}%
+            {predictedDensity.toFixed(0)}%
           </div>
         </div>
       </div>

@@ -22,7 +22,7 @@ export const FlowChart: React.FC<Props> = ({ data, loading }) => {
 
   if (loading) {
     return (
-      <div className="glass-card" style={{ padding: 16 }}>
+      <div className="glass-card" style={{ padding: 16, width: "100%", minWidth: 0 }}>
         <Skeleton height={chartHeight} />
       </div>
     );
@@ -30,7 +30,7 @@ export const FlowChart: React.FC<Props> = ({ data, loading }) => {
 
   if (!points.length) {
     return (
-      <div className="glass-card" style={{ padding: 16, color: "#f8fafc" }}>Flow data unavailable</div>
+      <div className="glass-card" style={{ padding: 16, color: "#f8fafc", width: "100%", minWidth: 0 }}>Flow data unavailable</div>
     );
   }
 
@@ -48,7 +48,7 @@ export const FlowChart: React.FC<Props> = ({ data, loading }) => {
       .join(" ");
 
   return (
-    <div className="glass-card" style={{ padding: 16 }}>
+    <div className="glass-card" style={{ padding: 16, width: "100%", minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
         <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "2px" }}>CROWD FLOW</div>
         <div style={{ display: "flex", gap: 12, alignItems: "center", color: "rgba(248, 250, 252, 0.7)", fontSize: 14 }}>
@@ -57,7 +57,7 @@ export const FlowChart: React.FC<Props> = ({ data, loading }) => {
           <Legend color="#a855f7" label="Net" />
         </div>
       </div>
-      <div style={{ overflowX: "auto", paddingBottom: 8 }}>
+      <div style={{ overflowX: "auto", paddingBottom: 8, scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.1) transparent" }}>
         <svg width={width} height={chartHeight} style={{ display: "block" }}>
           <Axes />
           <path d={linePath((p) => p.inflow)} fill="none" stroke="#38bdf8" strokeWidth={2} strokeLinejoin="round" />

@@ -10,6 +10,7 @@ import { AlertsPanel } from "@/components/ml/AlertsPanel";
 import { EvacuationDecisionPanel } from "@/components/ml/EvacuationDecisionPanel";
 import { HardwareStatusPanel } from "@/components/ml/HardwareStatusPanel";
 import { MLTrendPanel } from "@/components/ml/MLTrendPanel";
+import { resetDashboardState } from "@/api/dashboard";
 
 type TabType = "OVERVIEW" | "ANALYTICS" | "OPERATIONS";
 
@@ -18,10 +19,26 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { overview, timeline, flow, alerts, decision, hardware, loading, error, refresh } = useMLDashboardData(5000);
   const [activeTab, setActiveTab] = useState<TabType>("OVERVIEW");
+  const [resetting, setResetting] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate("/");
+  };
+
+  const handleResetDashboardState = async () => {
+    const confirmed = window.confirm("Reset ML dashboard history and hardware snapshot?");
+    if (!confirmed) return;
+
+    setResetting(true);
+    try {
+      await resetDashboardState();
+      await refresh();
+    } catch (err) {
+      console.error("Failed to reset dashboard state", err);
+    } finally {
+      setResetting(false);
+    }
   };
 
   const tabs: Array<{ id: TabType; label: string; dotColor: string }> = [
@@ -116,6 +133,24 @@ const Dashboard: React.FC = () => {
             Refresh
           </button>
           <button
+            onClick={handleResetDashboardState}
+            disabled={resetting}
+            style={{
+              padding: "8px 16px",
+              borderRadius: 8,
+              background: "color-mix(in srgb, var(--color-warning) 10%, transparent)",
+              border: "1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)",
+              color: "var(--color-warning)",
+              cursor: resetting ? "not-allowed" : "pointer",
+              opacity: resetting ? 0.7 : 1,
+              fontWeight: 600,
+              fontSize: 14,
+              transition: "all 0.2s"
+            }}
+          >
+            {resetting ? "Resetting..." : "Reset Data"}
+          </button>
+          <button
             onClick={handleLogout}
             style={{
               padding: "8px 16px",
@@ -189,9 +224,13 @@ const Dashboard: React.FC = () => {
             <RiskTimelineChart data={timeline} loading={loading} />
 
             {/* ROW 2 - Two columns */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <FlowChart data={flow} loading={loading} />
-              <MLTrendPanel hardware={hardware} loading={loading} />
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 12 }}>
+              <div style={{ minWidth: 0 }}>
+                <FlowChart data={flow} loading={loading} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <MLTrendPanel hardware={hardware} loading={loading} />
+              </div>
             </div>
           </div>
         )}
@@ -227,7 +266,7 @@ const Dashboard: React.FC = () => {
                     <div style={{ textAlign: "right" }}>
                       <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: 12 }}>Density</div>
                       <div style={{ color: "#f8fafc", fontWeight: 700, fontSize: 18 }}>
-                        {(hardware.trend_prediction.predicted_density * 100).toFixed(0)}%
+                        {Math.max(0, Math.min(100, Number(hardware.trend_prediction.predicted_density) || 0)).toFixed(0)}%
                       </div>
                     </div>
                   </div>

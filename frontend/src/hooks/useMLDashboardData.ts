@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getAlerts, getDecision, getFlow, getHardwareStatus, getOverview, getTimeline } from "@/api/dashboard";
 import { AlertItem, DecisionResponse, FlowPoint, HardwareStatusResponse, OverviewResponse, TimelinePoint } from "@/types/ml";
 
@@ -26,9 +26,15 @@ const defaultState: DashboardDataState = {
 
 export const useMLDashboardData = (pollIntervalMs = 15000) => {
   const [state, setState] = useState<DashboardDataState>(defaultState);
+  const hasFetchedOnceRef = useRef(false);
 
   const fetchData = useCallback(async () => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    if (!hasFetchedOnceRef.current) {
+      setState((prev) => ({ ...prev, loading: true, error: null }));
+    } else {
+      // Keep existing content mounted during refresh/polling so scroll position is preserved.
+      setState((prev) => ({ ...prev, error: null }));
+    }
     try {
       const [overview, timeline, flow, alerts, decision, hardware] = await Promise.all([
         getOverview(),
@@ -51,6 +57,8 @@ export const useMLDashboardData = (pollIntervalMs = 15000) => {
     } catch (err: any) {
       const message = err?.response?.data?.message || err?.message || "Failed to load dashboard data";
       setState((prev) => ({ ...prev, loading: false, error: message }));
+    } finally {
+      hasFetchedOnceRef.current = true;
     }
   }, []);
 

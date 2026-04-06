@@ -46,3 +46,10 @@ class InMemoryStore:
 
     def get_recent_alerts(self, limit: int = 50) -> List[IntelligenceOutput]:
         return list(self.alerts)[-limit:]
+
+    def reset(self) -> None:
+        """Clear all in-memory dashboard history and hardware snapshot."""
+        self.outputs.clear()
+        self.alerts.clear()
+        self.last_inference = None
+        self.hardware_status = HardwareStatus()

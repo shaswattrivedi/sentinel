@@ -60,3 +60,10 @@ def get_hardware_status(store=Depends(get_store)):
         "hardware_commands": hw.hardware_commands,
         "trend_prediction": hw.trend_prediction,
     }
+
+
+@router.post("/dashboard/reset")
+def reset_dashboard_state(store=Depends(get_store)):
+    """Clear in-memory dashboard history and latest hardware status."""
+    store.reset()
+    return {"status": "ok", "message": "Dashboard state reset"}
