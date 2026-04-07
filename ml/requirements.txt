@@ -12,6 +12,7 @@ requests>=2.31.0
 # ML & Data Processing
 numpy>=1.26.0
 opencv-python>=4.9.0
+ultralytics>=8.2.0
 
 # Development
 python-dotenv>=1.0.0

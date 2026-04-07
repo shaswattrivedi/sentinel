@@ -15,8 +15,14 @@ class MLService:
     """Thin wrapper that feeds validated telemetry into legacy and IoT-native pipelines."""
 
     def __init__(self) -> None:
-        self.pipeline = SentinelPipeline()
+        self._pipeline: Optional[SentinelPipeline] = None
         self.iot_engine = IoTRiskEngine()
+
+    @property
+    def pipeline(self) -> SentinelPipeline:
+        if self._pipeline is None:
+            self._pipeline = SentinelPipeline()
+        return self._pipeline
 
     def _decode_frame(self, frame_b64: str) -> np.ndarray:
         buffer = base64.b64decode(frame_b64)

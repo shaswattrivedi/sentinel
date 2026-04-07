@@ -12,6 +12,9 @@ class HardwareStatus:
     zone_status: Dict[str, str] = field(default_factory=dict)
     hardware_commands: Dict[str, Any] = field(default_factory=dict)
     trend_prediction: Dict[str, Any] = field(default_factory=dict)
+    risk_score: float = 0.0
+    z1_people_count: int = 0
+    latest_annotated_frame: Optional[str] = None
     last_updated: Optional[datetime] = None
 
 
@@ -34,11 +37,25 @@ class InMemoryStore:
         zone_status: Dict[str, str],
         hardware_commands: Dict[str, Any],
         trend_prediction: Dict[str, Any],
+        risk_score: float,
+        z1_people_count: int,
         timestamp: datetime,
     ) -> None:
         self.hardware_status.zone_status = zone_status
         self.hardware_status.hardware_commands = hardware_commands
         self.hardware_status.trend_prediction = trend_prediction
+        self.hardware_status.risk_score = risk_score
+        self.hardware_status.z1_people_count = z1_people_count
+        self.hardware_status.last_updated = timestamp
+
+    def update_camera_snapshot(
+        self,
+        latest_annotated_frame: Optional[str],
+        z1_people_count: int,
+        timestamp: datetime,
+    ) -> None:
+        self.hardware_status.latest_annotated_frame = latest_annotated_frame
+        self.hardware_status.z1_people_count = z1_people_count
         self.hardware_status.last_updated = timestamp
 
     def get_recent_outputs(self, limit: int = 100) -> List[IntelligenceOutput]:

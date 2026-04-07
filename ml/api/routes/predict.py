@@ -26,6 +26,8 @@ def predict(
             zone_status=result.get("zone_status", {}),
             hardware_commands=result.get("hardware_commands", {}),
             trend_prediction=result.get("trend_prediction", {}),
+            risk_score=float(result.get("risk_score", 0.0)),
+            z1_people_count=int(payload.z1_cam_count),
             timestamp=payload.timestamp,
         )
 

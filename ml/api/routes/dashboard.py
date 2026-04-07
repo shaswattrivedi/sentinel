@@ -53,13 +53,35 @@ def get_hardware_status(store=Depends(get_store)):
             "zone_status": {"z1": "UNKNOWN", "z2": "UNKNOWN", "z3": "UNKNOWN"},
             "hardware_commands": {"z2_led": "gray", "z3_led": "gray", "z2_buzzer": False, "z3_buzzer": False},
             "trend_prediction": {"trend": "UNKNOWN", "prediction": "NO_DATA", "predicted_density": 0.0, "confidence": 0.0},
+            "risk_score": 0.0,
+            "z1_people_count": 0,
+            "latest_annotated_frame": None,
         }
+
+    zone_status = {"z1": "UNKNOWN", "z2": "UNKNOWN", "z3": "UNKNOWN"}
+    zone_status.update(hw.zone_status or {})
+
+    hardware_commands = {"z2_led": "gray", "z3_led": "gray", "z2_buzzer": False, "z3_buzzer": False}
+    hardware_commands.update(hw.hardware_commands or {})
+
+    trend_prediction = {"trend": "UNKNOWN", "prediction": "NO_DATA", "predicted_density": 0.0, "confidence": 0.0}
+    trend_prediction.update(hw.trend_prediction or {})
+
     return {
         "timestamp": hw.last_updated,
-        "zone_status": hw.zone_status,
-        "hardware_commands": hw.hardware_commands,
-        "trend_prediction": hw.trend_prediction,
+        "zone_status": zone_status,
+        "hardware_commands": hardware_commands,
+        "trend_prediction": trend_prediction,
+        "risk_score": hw.risk_score,
+        "z1_people_count": hw.z1_people_count,
+        "latest_annotated_frame": hw.latest_annotated_frame,
     }
+
+
+@router.get("/dashboard/snapshot", response_model=HardwareStatusResponse)
+def get_dashboard_snapshot(store=Depends(get_store)):
+    """Alias endpoint for the latest hardware/status snapshot."""
+    return get_hardware_status(store=store)
 
 
 @router.post("/dashboard/reset")

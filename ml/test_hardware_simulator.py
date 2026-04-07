@@ -22,6 +22,7 @@ Usage:
 """
 
 import argparse
+import base64
 import math
 import random
 import sys
@@ -29,12 +30,25 @@ import time
 from datetime import datetime, timezone
 from typing import Callable, Dict, Any
 
+import cv2
+import numpy as np
 import requests
 
 # Configuration
 ML_SERVICE_URL = "http://localhost:8000"
 PREDICT_ENDPOINT = f"{ML_SERVICE_URL}/predict"
+CAMERA_TELEMETRY_ENDPOINT = f"{ML_SERVICE_URL}/api/v1/telemetry/camera"
 DEFAULT_INTERVAL = 2.0  # seconds between readings
+
+
+def generate_synthetic_frame(people_count: int) -> str:
+    """Generate a synthetic 320x240 frame with people count drawn on it."""
+    frame = np.zeros((240, 320, 3), dtype=np.uint8)
+    frame[:] = (30, 30, 50)  # dark background
+    cv2.putText(frame, "SIMULATED", (80, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (100, 100, 255), 2)
+    cv2.putText(frame, f"People: {people_count}", (100, 140), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 100), 2)
+    _, buffer = cv2.imencode(".jpg", frame)
+    return base64.b64encode(buffer).decode("utf-8")
 
 
 class SensorSimulator:
@@ -47,16 +61,18 @@ class SensorSimulator:
 
     def _send_reading(self, z1_cam: int, z2_density: float, z3_density: float) -> Dict[str, Any]:
         """Send simulated reading to ML service."""
+        timestamp = datetime.now(timezone.utc).isoformat()
         payload = {
             "z1_cam_count": z1_cam,
             "z2_density_score": z2_density,
             "z3_density_score": z3_density,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": timestamp,
         }
 
         try:
             response = requests.post(PREDICT_ENDPOINT, json=payload, timeout=5)
             response.raise_for_status()
+            self._send_camera_telemetry(z1_cam, timestamp)
             return response.json()
         except requests.exceptions.ConnectionError:
             print(f"\n❌ Cannot connect to ML service at {ML_SERVICE_URL}")
@@ -65,6 +81,23 @@ class SensorSimulator:
         except Exception as e:
             print(f"\n❌ Error sending data: {e}")
             return {}
+
+    def _send_camera_telemetry(self, people_count: int, timestamp: str) -> None:
+        """Send a synthetic frame to exercise the camera telemetry path."""
+        synthetic_frame = generate_synthetic_frame(people_count)
+        try:
+            response = requests.post(
+                CAMERA_TELEMETRY_ENDPOINT,
+                json={
+                    "frame": synthetic_frame,
+                    "zone_id": "zone-1",
+                    "timestamp": timestamp,
+                },
+                timeout=5,
+            )
+            response.raise_for_status()
+        except Exception as e:
+            print(f"⚠️ Camera telemetry post failed: {e}")
 
     def _print_status(self, data: Dict[str, Any], z1: int, z2: float, z3: float):
         """Pretty print the current status."""

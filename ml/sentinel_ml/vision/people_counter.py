@@ -1,47 +1,80 @@
+import base64
 from pathlib import Path
 from typing import Optional, Tuple
 
 import cv2
 import numpy as np
+from ultralytics import YOLO
 
 from sentinel_ml.inputs.schemas import CameraFrameInput
-from sentinel_ml.utils.smoothing import ExponentialSmoother, MovingAverageSmoother
 
 
 class CameraPeopleCounter:
-    """Lightweight people counter using OpenCV Haar cascades or MobileNet SSD."""
+    """YOLOv8-backed people counter for camera frames."""
 
-    def __init__(
-        self,
-        detection_mode: str = "haar",
-        haar_cascade: str = "haarcascade_fullbody.xml",
-        smoothing_alpha: float = 0.4,
-        average_window: int = 3,
-    ) -> None:
-        self.detection_mode = detection_mode
-        self.smoother = ExponentialSmoother(alpha=smoothing_alpha)
-        self.mavg = MovingAverageSmoother(window_size=average_window)
-        self.detector = self._load_detector(haar_cascade)
+    def __init__(self) -> None:
+        # Keep model weights in the vision module, independent of process CWD.
+        models_dir = Path(__file__).resolve().parent / "models"
+        models_dir.mkdir(parents=True, exist_ok=True)
+        self.model_path = models_dir / "yolov8n.pt"
+        self.model = YOLO(str(self.model_path))
+        self.model.overrides["verbose"] = False
 
-    def _load_detector(self, cascade_name: str):
-        if self.detection_mode == "haar":
-            cascade_path = Path(cv2.data.haarcascades) / cascade_name
-            if not cascade_path.exists():
-                raise FileNotFoundError(f"Cascade not found: {cascade_path}")
-            return cv2.CascadeClassifier(str(cascade_path))
-        raise ValueError(f"Unsupported detection_mode: {self.detection_mode}")
+    def _infer(self, frame: np.ndarray):
+        return self.model(frame, classes=[0], verbose=False)  # class 0 = person
 
-    def _detect(self, frame: np.ndarray) -> Tuple[int, float]:
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        detections = self.detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3)
-        count = len(detections)
-        confidence = min(1.0, count / 5.0) if count > 0 else 0.2
-        return count, confidence
+    def count_from_base64(self, b64_frame: str) -> Tuple[int, float]:
+        """
+        Takes a base64-encoded JPEG frame.
+        Returns (people_count, confidence).
+        """
+        try:
+            img_bytes = base64.b64decode(b64_frame)
+            np_arr = np.frombuffer(img_bytes, np.uint8)
+            frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            if frame is None:
+                return 0, 0.0
+            results = self._infer(frame)
+            boxes = results[0].boxes
+            count = len(boxes)
+            confidence = float(boxes.conf.mean().item()) if count > 0 else 0.75
+            return count, confidence
+        except Exception as e:
+            print(f"[YOLO] Inference error: {e}")
+            return 0, 0.0
+
+    def count_and_annotate(self, b64_frame: str) -> Tuple[int, float, Optional[str]]:
+        """
+        Same as count_from_base64 but also returns an annotated frame as base64.
+        Used for live dashboard camera feed display.
+        """
+        try:
+            img_bytes = base64.b64decode(b64_frame)
+            np_arr = np.frombuffer(img_bytes, np.uint8)
+            frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            if frame is None:
+                return 0, 0.0, None
+            results = self._infer(frame)
+            boxes = results[0].boxes
+            count = len(boxes)
+            confidence = float(boxes.conf.mean().item()) if count > 0 else 0.75
+            annotated_frame = results[0].plot()
+            _, buffer = cv2.imencode(".jpg", annotated_frame)
+            annotated_b64 = base64.b64encode(buffer).decode("utf-8")
+            return count, confidence, annotated_b64
+        except Exception as e:
+            print(f"[YOLO] Annotation error: {e}")
+            return 0, 0.0, None
 
     def process(self, camera_input: CameraFrameInput) -> Tuple[int, float]:
+        """Compatibility path used by the legacy fused pipeline."""
         camera_input.validate()
-        count, raw_confidence = self._detect(camera_input.frame)
-        smoothed_count = self.smoother.update(float(count))
-        stabilized = self.mavg.update(smoothed_count)
-        confidence = min(1.0, (raw_confidence + 0.3 * stabilized) / 1.3)
-        return int(round(stabilized)), confidence
+        try:
+            results = self._infer(camera_input.frame)
+            boxes = results[0].boxes
+            count = len(boxes)
+            confidence = float(boxes.conf.mean().item()) if count > 0 else 0.75
+            return count, confidence
+        except Exception as e:
+            print(f"[YOLO] Process error: {e}")
+            return 0, 0.0

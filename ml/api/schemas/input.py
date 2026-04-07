@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field, validator
 
@@ -54,6 +54,19 @@ class CameraFramePayload(BaseModel):
 
 
 class CameraFrameRequest(BaseModel):
-    frame: CameraFramePayload
+    frame: Union[CameraFramePayload, str]
+    zone_id: Optional[str] = None
+    timestamp: Optional[datetime] = None
     # Optional accompanying sensor readings if available for immediate fusion
     readings: Optional[List[SensorTelemetryPayload]] = None
+
+    def to_frame_payload(self) -> CameraFramePayload:
+        if isinstance(self.frame, CameraFramePayload):
+            return self.frame
+        if not self.zone_id:
+            raise ValueError("zone_id is required when frame is a base64 string")
+        return CameraFramePayload(
+            timestamp=self.timestamp or datetime.now(timezone.utc),
+            zone_id=self.zone_id,
+            frame_b64=self.frame,
+        )

@@ -41,6 +41,9 @@ class HardwareStatusResponse(BaseModel):
     zone_status: ZoneStatusResponse = Field(default_factory=lambda: ZoneStatusResponse(z1="UNKNOWN", z2="UNKNOWN", z3="UNKNOWN"))
     hardware_commands: HardwareCommandsResponse = Field(default_factory=lambda: HardwareCommandsResponse(z2_led="gray", z3_led="gray", z2_buzzer=False, z3_buzzer=False))
     trend_prediction: TrendPredictionResponse = Field(default_factory=lambda: TrendPredictionResponse(trend="UNKNOWN", prediction="NO_DATA", predicted_density=0.0, confidence=0.0))
+    risk_score: float = 0.0
+    z1_people_count: int = 0
+    latest_annotated_frame: Optional[str] = None
 
 
 class OverviewResponse(BaseModel):

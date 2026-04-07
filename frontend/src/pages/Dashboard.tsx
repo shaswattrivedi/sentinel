@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { useMLDashboardData } from "../hooks/useMLDashboardData";
 import { RiskScoreIndicator } from "@/components/ml/RiskScoreIndicator";
@@ -10,6 +11,8 @@ import { AlertsPanel } from "@/components/ml/AlertsPanel";
 import { EvacuationDecisionPanel } from "@/components/ml/EvacuationDecisionPanel";
 import { HardwareStatusPanel } from "@/components/ml/HardwareStatusPanel";
 import { MLTrendPanel } from "@/components/ml/MLTrendPanel";
+import { CameraFeedPanel } from "@/components/ml/CameraFeedPanel";
+import { ZoneMapPanel } from "@/components/ml/ZoneMapPanel";
 import { resetDashboardState } from "@/api/dashboard";
 
 type TabType = "OVERVIEW" | "ANALYTICS" | "OPERATIONS";
@@ -17,9 +20,45 @@ type TabType = "OVERVIEW" | "ANALYTICS" | "OPERATIONS";
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { overview, timeline, flow, alerts, decision, hardware, loading, error, refresh } = useMLDashboardData(5000);
+  const {
+    overview,
+    timeline,
+    flow,
+    alerts,
+    decision,
+    loading,
+    isLoading,
+    error,
+    refresh,
+    riskScore,
+    systemStatus,
+    zoneStatus,
+    hardwareCommands,
+    latestAnnotatedFrame,
+    z1PeopleCount,
+    hardware
+  } = useMLDashboardData();
   const [activeTab, setActiveTab] = useState<TabType>("OVERVIEW");
   const [resetting, setResetting] = useState(false);
+  const [showCriticalBanner, setShowCriticalBanner] = useState(false);
+  const prevSystemStatusRef = useRef(systemStatus);
+
+  const riskLevelFromSystem =
+    systemStatus === "CRITICAL" ? "HIGH" : systemStatus === "MODERATE" ? "MEDIUM" : "LOW";
+
+  useEffect(() => {
+    const prev = prevSystemStatusRef.current;
+    if (systemStatus === "CRITICAL" && prev !== "CRITICAL") {
+      setShowCriticalBanner(true);
+      const alertBeep = new Audio(
+        "data:audio/wav;base64,UklGRmQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YUAAAAAAAP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/"
+      );
+      alertBeep.play().catch(() => {
+        // Ignore autoplay restrictions; banner remains visible as primary signal.
+      });
+    }
+    prevSystemStatusRef.current = systemStatus;
+  }, [systemStatus]);
 
   const handleLogout = () => {
     logout();
@@ -49,6 +88,49 @@ const Dashboard: React.FC = () => {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <AnimatePresence>
+        {showCriticalBanner && (
+          <motion.div
+            initial={{ y: -80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -80, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            style={{
+              position: "sticky",
+              top: 0,
+              zIndex: 100,
+              width: "100%",
+              background: "linear-gradient(90deg, rgba(127,29,29,0.95), rgba(220,38,38,0.95))",
+              borderBottom: "1px solid rgba(254,202,202,0.35)",
+              boxShadow: "0 10px 32px rgba(127,29,29,0.35)",
+              color: "#fee2e2",
+              padding: "12px 20px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontWeight: 700,
+              letterSpacing: 0.2
+            }}
+          >
+            <span>⚠️ CRITICAL ALERT — Immediate Action Required</span>
+            <button
+              onClick={() => setShowCriticalBanner(false)}
+              style={{
+                background: "rgba(0,0,0,0.2)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.25)",
+                borderRadius: 8,
+                padding: "6px 10px",
+                cursor: "pointer",
+                fontWeight: 700
+              }}
+            >
+              Dismiss
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <header
         className="glass-card"
         style={{
@@ -178,43 +260,26 @@ const Dashboard: React.FC = () => {
       {/* Tab Panels */}
       <div style={{ flex: 1, padding: 24, overflow: "auto" }}>
         {activeTab === "OVERVIEW" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "start" }}>
-            {/* LEFT COLUMN */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <RiskScoreIndicator score={overview?.riskScore ?? null} level={overview?.riskLevel ?? null} loading={loading} />
-              
-              {/* Compact Evacuation Summary */}
-              {decision && (
-                <div className="glass-card" style={{ padding: 16 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ 
-                      color: decision.state === "EVACUATE" ? "var(--color-critical)" : decision.state === "WARNING" ? "var(--color-warning)" : "var(--color-safe)",
-                      fontWeight: 800,
-                      fontSize: 16,
-                      textTransform: "uppercase",
-                      letterSpacing: "1px"
-                    }}>
-                      {decision.state}
-                    </div>
-                    {typeof decision.confidence === "number" && (
-                      <div style={{ color: "rgba(248, 250, 252, 0.7)", fontSize: 14, fontWeight: 600 }}>
-                        {(decision.confidence * 100).toFixed(0)}% confident
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+          <div style={{ display: "grid", gridTemplateColumns: "1.25fr 1fr 1fr", gap: 12, alignItems: "start" }}>
+            <div style={{ gridColumn: "span 2" }}>
+              <CameraFeedPanel
+                annotatedFrame={latestAnnotatedFrame}
+                peopleCount={z1PeopleCount}
+                zoneStatus={zoneStatus.z1}
+              />
             </div>
 
-            {/* CENTER COLUMN */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <CrowdDensityCard density={overview?.densityLevel ?? null} hardware={hardware} loading={loading} />
-            </div>
+            <EvacuationDecisionPanel decision={decision} loading={isLoading} />
 
-            {/* RIGHT COLUMN */}
-            <div>
-              <EvacuationDecisionPanel decision={decision} loading={loading} />
-            </div>
+            <ZoneMapPanel zoneStatus={zoneStatus} hardwareCommands={hardwareCommands} />
+
+            <RiskScoreIndicator
+              score={Number.isFinite(riskScore) ? riskScore : overview?.riskScore ?? null}
+              level={riskLevelFromSystem}
+              loading={isLoading}
+            />
+
+            <CrowdDensityCard density={overview?.densityLevel ?? null} hardware={hardware} loading={isLoading} />
           </div>
         )}
 

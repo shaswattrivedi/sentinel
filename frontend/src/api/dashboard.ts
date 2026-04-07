@@ -151,7 +151,12 @@ export const getDecision = async (): Promise<DecisionResponse> => {
 };
 
 export const getHardwareStatus = async (): Promise<HardwareStatusResponse> => {
-  const res = await mlApi.get<HardwareStatusResponse>("/dashboard/hardware");
+  const res = await mlApi.get<HardwareStatusResponse>("/dashboard/snapshot");
+  return res.data;
+};
+
+export const getDashboardSnapshot = async (): Promise<HardwareStatusResponse> => {
+  const res = await mlApi.get<HardwareStatusResponse>("/dashboard/snapshot");
   return res.data;
 };
 

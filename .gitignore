@@ -50,3 +50,6 @@ coverage/
 # Misc
 *.pem
 .cache/
+
+# ML model weights
+ml/sentinel_ml/vision/models/*.pt

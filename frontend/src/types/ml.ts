@@ -1,4 +1,5 @@
 export type RiskLevel = "LOW" | "MEDIUM" | "HIGH";
+export type SystemStatus = "SAFE" | "MODERATE" | "CRITICAL" | "UNKNOWN";
 
 export type OverviewResponse = {
   riskScore: number;
@@ -41,9 +42,9 @@ export type DecisionResponse = {
 };
 
 export type ZoneStatus = {
-  z1: string;
-  z2: string;
-  z3: string;
+  z1: SystemStatus;
+  z2: SystemStatus;
+  z3: SystemStatus;
 };
 
 export type HardwareCommands = {
@@ -65,6 +66,20 @@ export type HardwareStatusResponse = {
   zone_status: ZoneStatus;
   hardware_commands: HardwareCommands;
   trend_prediction: TrendPrediction;
+  risk_score: number;
+  z1_people_count: number;
+  latest_annotated_frame: string | null;
+};
+
+export type DashboardSnapshotData = {
+  riskScore: number;
+  systemStatus: SystemStatus;
+  zoneStatus: ZoneStatus;
+  hardwareCommands: HardwareCommands;
+  trendPrediction: TrendPrediction;
+  latestAnnotatedFrame: string | null;
+  z1PeopleCount: number;
+  lastUpdated: string | null;
 };
 
 export type OverviewPayload = { data: OverviewResponse };

@@ -1,9 +1,17 @@
+from functools import lru_cache
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from api.schemas.input import CameraFrameRequest, SensorTelemetryRequest
-from utils.deps import get_aggregation_service, get_ml_service
+from sentinel_ml.vision.people_counter import CameraPeopleCounter
+from utils.deps import get_aggregation_service, get_ml_service, get_store
 
 router = APIRouter(prefix="/api/v1/telemetry", tags=["telemetry"])
+
+
+@lru_cache(maxsize=1)
+def get_camera_counter() -> CameraPeopleCounter:
+    return CameraPeopleCounter()
 
 
 @router.post("/sensor")
@@ -23,13 +31,23 @@ def ingest_sensor(
 @router.post("/camera")
 def ingest_camera(
     payload: CameraFrameRequest,
-    ml_service=Depends(get_ml_service),
-    agg_service=Depends(get_aggregation_service),
+    store=Depends(get_store),
+    counter=Depends(get_camera_counter),
 ):
     try:
-        sensor_readings = payload.readings or []
-        output = ml_service.run(sensor_payloads=sensor_readings, camera_payload=payload.frame)
-        agg_service.ingest(output)
-        return {"status": "ok", "crowd_count": output.fused_crowd_count, "density": output.crowd_density, "risk": output.risk_level}
+        frame_payload = payload.to_frame_payload()
+        people_count, confidence, annotated_frame = counter.count_and_annotate(frame_payload.frame_b64)
+        store.update_camera_snapshot(
+            latest_annotated_frame=annotated_frame,
+            z1_people_count=people_count,
+            timestamp=frame_payload.timestamp,
+        )
+        return {
+            "people_count": people_count,
+            "confidence": confidence,
+            "annotated_frame": annotated_frame,
+            "zone_id": frame_payload.zone_id,
+            "timestamp": frame_payload.timestamp,
+        }
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
