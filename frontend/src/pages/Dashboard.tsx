@@ -23,31 +23,30 @@ const Dashboard: React.FC = () => {
     overview,
     timeline,
     flow,
-    alerts,
+    alertsPanel,
     decision,
-    loading,
     isLoading,
     error,
     refresh,
-    riskScore,
-    systemStatus,
-    zoneStatus,
-    hardwareCommands,
-    latestAnnotatedFrame,
-    z1PeopleCount,
+    risk_score,
+    system_status,
+    zone_status,
+    zone_data,
+    annotated_frames,
     hardware
   } = useMLDashboardData();
   const [activeTab, setActiveTab] = useState<TabType>("OVERVIEW");
   const [resetting, setResetting] = useState(false);
   const [showCriticalBanner, setShowCriticalBanner] = useState(false);
-  const prevSystemStatusRef = useRef(systemStatus);
+  const prevSystemStatusRef = useRef(system_status);
+  const alerts = alertsPanel;
 
   const riskLevelFromSystem =
-    systemStatus === "CRITICAL" ? "HIGH" : systemStatus === "MODERATE" ? "MEDIUM" : "LOW";
+    system_status === "CRITICAL" ? "HIGH" : system_status === "MODERATE" ? "MEDIUM" : "LOW";
 
   useEffect(() => {
     const prev = prevSystemStatusRef.current;
-    if (systemStatus === "CRITICAL" && prev !== "CRITICAL") {
+    if (system_status === "CRITICAL" && prev !== "CRITICAL") {
       setShowCriticalBanner(true);
       const alertBeep = new Audio(
         "data:audio/wav;base64,UklGRmQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YUAAAAAAAP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/"
@@ -56,8 +55,8 @@ const Dashboard: React.FC = () => {
         // Ignore autoplay restrictions; banner remains visible as primary signal.
       });
     }
-    prevSystemStatusRef.current = systemStatus;
-  }, [systemStatus]);
+    prevSystemStatusRef.current = system_status;
+  }, [system_status]);
 
   const handleLogout = () => {
     logout();
@@ -301,22 +300,52 @@ const Dashboard: React.FC = () => {
       {/* Tab Panels */}
       <div style={{ flex: 1, padding: 24, overflow: "auto" }}>
         {activeTab === "OVERVIEW" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1.25fr 1fr 1fr", gap: 12, alignItems: "start" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="grid grid-cols-5" style={{ gap: 12 }}>
+              <div className="glass-card" style={{ padding: "10px 12px" }}>
+                <div style={{ color: "rgba(248,250,252,0.55)", fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2 }}>Risk Score</div>
+                <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 18 }}>{Math.round(risk_score)}</div>
+              </div>
+              <div className="glass-card" style={{ padding: "10px 12px" }}>
+                <div style={{ color: "rgba(248,250,252,0.55)", fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2 }}>System</div>
+                <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 18 }}>{system_status}</div>
+              </div>
+              <div className="glass-card" style={{ padding: "10px 12px" }}>
+                <div style={{ color: "rgba(248,250,252,0.55)", fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2 }}>Predicted Density</div>
+                <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 18 }}>
+                  {Math.round(hardware?.trend_prediction?.predicted_density ?? 0)}%
+                </div>
+              </div>
+              <div className="glass-card" style={{ padding: "10px 12px" }}>
+                <div style={{ color: "rgba(248,250,252,0.55)", fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2 }}>Zone 1</div>
+                <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 18 }}>
+                  {zone_data["zone-1"].cam_people_count} people
+                </div>
+              </div>
+              <div className="glass-card" style={{ padding: "10px 12px" }}>
+                <div style={{ color: "rgba(248,250,252,0.55)", fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2 }}>Zone 2</div>
+                <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 18 }}>
+                  {zone_data["zone-2"].cam_people_count} people
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1.25fr 1fr 1fr", gap: 12, alignItems: "start" }}>
             <div style={{ gridColumn: "span 2" }}>
               <CameraFeedPanel
-                annotatedFrame={latestAnnotatedFrame}
-                peopleCount={z1PeopleCount}
-                zoneStatus={zoneStatus.z1}
+                annotatedFrames={annotated_frames}
+                zoneData={zone_data}
+                zoneStatus={zone_status}
               />
             </div>
 
             <EvacuationDecisionPanel decision={decision} loading={isLoading} />
 
-            <ZoneMapPanel zoneStatus={zoneStatus} hardwareCommands={hardwareCommands} />
+            <ZoneMapPanel zoneStatus={zone_status} zoneData={zone_data} />
 
             <div style={{ gridColumn: "span 2" }}>
               <CombinedRiskDensityCard
-                score={Number.isFinite(riskScore) ? riskScore : overview?.riskScore ?? null}
+                score={Number.isFinite(risk_score) ? risk_score : overview?.riskScore ?? null}
                 level={riskLevelFromSystem}
                 density={overview?.densityLevel ?? null}
                 hardware={hardware}
@@ -324,20 +353,21 @@ const Dashboard: React.FC = () => {
               />
             </div>
           </div>
+          </div>
         )}
 
         {activeTab === "ANALYTICS" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {/* ROW 1 - Full width */}
-            <RiskTimelineChart data={timeline} loading={loading} />
+            <RiskTimelineChart data={timeline} loading={isLoading} />
 
             {/* ROW 2 - Two columns */}
             <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 12 }}>
               <div style={{ minWidth: 0 }}>
-                <FlowChart data={flow} loading={loading} />
+                <FlowChart data={flow} loading={isLoading} />
               </div>
               <div style={{ minWidth: 0 }}>
-                <MLTrendPanel hardware={hardware} loading={loading} />
+                <MLTrendPanel hardware={hardware} loading={isLoading} />
               </div>
             </div>
           </div>
@@ -347,13 +377,85 @@ const Dashboard: React.FC = () => {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "stretch" }}>
             {/* LEFT COLUMN */}
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <MLInsightsPanel hardware={hardware} loading={loading} />
+              <div className="glass-card" style={{ padding: 16 }}>
+                <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "2px", marginBottom: 12 }}>
+                  ZONE HEALTH
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {(["zone-1", "zone-2"] as const).map((zoneKey) => {
+                    const status = zone_status[zoneKey];
+                    const validation = Math.max(0, Math.min(100, Number(zone_data[zoneKey].validation_score) || 0));
+                    const hasFeed = !!annotated_frames[zoneKey];
+                    const statusColor =
+                      status === "CRITICAL" ? "var(--color-critical)" : status === "MODERATE" ? "var(--color-warning)" : "var(--color-safe)";
+
+                    return (
+                      <div
+                        key={zoneKey}
+                        style={{
+                          borderRadius: 12,
+                          background: "rgba(255,255,255,0.03)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          padding: 12,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 10,
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div style={{ color: "#f8fafc", fontSize: 14, fontWeight: 800, letterSpacing: 0.4 }}>
+                            {zoneKey === "zone-1" ? "ZONE 1" : "ZONE 2"}
+                          </div>
+                          <div
+                            style={{
+                              borderRadius: 999,
+                              padding: "3px 8px",
+                              fontSize: 10,
+                              fontWeight: 800,
+                              letterSpacing: 0.8,
+                              color: statusColor,
+                              border: `1px solid color-mix(in srgb, ${statusColor} 45%, transparent)`,
+                              background: "rgba(0,0,0,0.22)",
+                            }}
+                          >
+                            {status}
+                          </div>
+                        </div>
+
+                        <div style={{ color: hasFeed ? "#86efac" : "rgba(148,163,184,0.9)", fontSize: 13, fontWeight: 700 }}>
+                          {hasFeed ? "● Active" : "○ No Feed"}
+                        </div>
+
+                        <div style={{ color: "#f8fafc", fontSize: 13 }}>
+                          People: <strong>{zone_data[zoneKey].cam_people_count}</strong>
+                        </div>
+
+                        <div>
+                          <div style={{ color: "rgba(248,250,252,0.6)", fontSize: 11, marginBottom: 6 }}>Sensor Validation</div>
+                          <div style={{ height: 8, borderRadius: 999, background: "rgba(15,23,42,0.7)", overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)" }}>
+                            <div
+                              style={{
+                                width: `${validation}%`,
+                                height: "100%",
+                                background: statusColor,
+                                boxShadow: `0 0 12px color-mix(in srgb, ${statusColor} 60%, transparent)`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <MLInsightsPanel hardware={hardware} loading={isLoading} />
             </div>
 
             {/* RIGHT COLUMN */}
             <div style={{ position: "relative", minHeight: 0 }}>
               <div style={{ position: "absolute", inset: 0 }}>
-                <AlertsPanel alerts={alerts} loading={loading} fillHeight />
+                <AlertsPanel alerts={alerts} loading={isLoading} fillHeight />
               </div>
             </div>
           </div>

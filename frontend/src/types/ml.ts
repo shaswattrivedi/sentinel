@@ -1,5 +1,53 @@
+export type ZoneStatusLevel = "SAFE" | "MODERATE" | "CRITICAL";
+export type SystemStatus = "SAFE" | "MODERATE" | "CRITICAL";
+export type TrendDirection = "INCREASING" | "STABLE" | "DECREASING";
+export type TrendPrediction = "LOW_TREND" | "MODERATE_TREND" | "HIGH_RISK";
+
+export interface ZoneData {
+  cam_people_count: number;
+  validation_score: number;
+}
+
+export interface Alert {
+  severity: "WARNING" | "CRITICAL";
+  message: string;
+  timestamp: string;
+}
+
+export interface TrendData {
+  trend: TrendDirection;
+  prediction: TrendPrediction;
+  predicted_density: number;
+  confidence: number;
+}
+
+export interface DashboardSnapshot {
+  risk_score: number;
+  system_status: SystemStatus;
+  zone_status: {
+    "zone-1": ZoneStatusLevel;
+    "zone-2": ZoneStatusLevel;
+  };
+  zone_data: {
+    "zone-1": ZoneData;
+    "zone-2": ZoneData;
+  };
+  annotated_frames: {
+    "zone-1": string | null;
+    "zone-2": string | null;
+  };
+  trend_prediction: TrendData;
+  alerts: Alert[];
+  timestamp: string;
+}
+
+export interface MLDashboardState extends DashboardSnapshot {
+  isLoading: boolean;
+  error: string | null;
+}
+
+// Compatibility types used by analytics/decision panels.
 export type RiskLevel = "LOW" | "MEDIUM" | "HIGH";
-export type SystemStatus = "SAFE" | "MODERATE" | "CRITICAL" | "UNKNOWN";
 
 export type OverviewResponse = {
   riskScore: number;
@@ -36,49 +84,12 @@ export type AlertItem = {
 export type DecisionResponse = {
   state: "NORMAL" | "WARNING" | "EVACUATE";
   recommendedDirection?: string;
-  confidence?: number; // 0-1
+  confidence?: number;
   rationale?: string;
   updatedAt: string;
 };
 
-export type ZoneStatus = {
-  z1: SystemStatus;
-  z2: SystemStatus;
-  z3: SystemStatus;
-};
-
-export type HardwareCommands = {
-  z2_led: "green" | "yellow" | "red" | "gray";
-  z3_led: "green" | "yellow" | "red" | "gray";
-};
-
-export type TrendPrediction = {
-  trend: "INCREASING" | "STABLE" | "DECREASING" | "UNKNOWN";
-  prediction: "LOW_TREND" | "MODERATE_TREND" | "HIGH_RISK" | "NO_DATA";
-  predicted_density: number;
-  confidence: number;
-};
-
-export type HardwareStatusResponse = {
-  timestamp: string | null;
-  zone_status: ZoneStatus;
-  hardware_commands: HardwareCommands;
-  trend_prediction: TrendPrediction;
-  risk_score: number;
-  z1_people_count: number;
-  latest_annotated_frame: string | null;
-};
-
-export type DashboardSnapshotData = {
-  riskScore: number;
-  systemStatus: SystemStatus;
-  zoneStatus: ZoneStatus;
-  hardwareCommands: HardwareCommands;
-  trendPrediction: TrendPrediction;
-  latestAnnotatedFrame: string | null;
-  z1PeopleCount: number;
-  lastUpdated: string | null;
-};
+export type HardwareStatusResponse = DashboardSnapshot;
 
 export type OverviewPayload = { data: OverviewResponse };
 export type TimelinePayload = { data: TimelinePoint[] };

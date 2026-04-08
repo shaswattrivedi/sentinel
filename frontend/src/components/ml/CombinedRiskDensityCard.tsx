@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { RiskLevel, HardwareStatusResponse, HardwareCommands } from "@/types/ml";
+import { RiskLevel, HardwareStatusResponse } from "@/types/ml";
 import { Skeleton } from "@/components/ml/Skeleton";
 
 const levelColor: Record<RiskLevel, string> = {
@@ -134,36 +134,24 @@ export const CombinedRiskDensityCard: React.FC<Props> = ({ score, level, density
 
       </div>
 
-      {/* Optional Hardware Status row embedded underneath */}
+      {/* Optional Zone Status row embedded underneath */}
       {hardware?.zone_status && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
           <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "2px" }}>
-            ZONES & TRAFFIC SIGNALS
+            ZONE STATUS
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
             {Object.entries(hardware.zone_status).map(([zone, status]) => {
               const strVal = String(status).toUpperCase();
-              const safeState = strVal === "SAFE" || strVal === "NORMAL" || strVal === "LOW";
-              const color = safeState ? "var(--color-safe)" : "var(--color-critical)";
-              
-              const isZone2Or3 = zone === "z2" || zone === "z3";
-              const ledStr = isZone2Or3 ? hardware.hardware_commands?.[`${zone}_led` as keyof HardwareCommands] : null;
-              const isSafe = ledStr === "green" || !ledStr;
-              const ledRColor = isSafe ? "rgba(255,255,255,0.08)" : "var(--color-critical)";
-              const ledGColor = isSafe ? "var(--color-safe)" : "rgba(255,255,255,0.08)";
+              const safeState = strVal === "SAFE";
+              const moderateState = strVal === "MODERATE";
+              const color = safeState ? "var(--color-safe)" : moderateState ? "var(--color-warning)" : "var(--color-critical)";
 
               return (
                 <div key={zone} style={{ display: "flex", flexDirection: "column", gap: 6, background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ fontSize: 13, textTransform: "uppercase", color: "rgba(248, 250, 252, 0.7)", letterSpacing: "1px", fontWeight: 700 }}>{zone}</span>
-                    {isZone2Or3 ? (
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <span style={{ width: 10, height: 10, borderRadius: "50%", background: ledRColor, boxShadow: !isSafe ? `0 0 6px ${ledRColor}` : "none" }} title="Red LED" />
-                        <span style={{ width: 10, height: 10, borderRadius: "50%", background: ledGColor, boxShadow: isSafe ? `0 0 6px ${ledGColor}` : "none" }} title="Green LED" />
-                      </div>
-                    ) : (
-                      <div style={{ fontSize: 10, color: "rgba(248, 250, 252, 0.4)", textTransform: "uppercase", letterSpacing: "1px" }}>Camera</div>
-                    )}
+                    <div style={{ fontSize: 10, color: "rgba(248, 250, 252, 0.4)", textTransform: "uppercase", letterSpacing: "1px" }}>Super Node</div>
                   </div>
                   <span style={{ color, fontSize: 13, fontWeight: 800, textShadow: `0 0 6px ${color}80` }}>
                     {strVal}

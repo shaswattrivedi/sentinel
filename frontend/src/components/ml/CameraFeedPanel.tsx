@@ -1,97 +1,73 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { ZoneData, ZoneStatusLevel } from "@/types/ml";
 
-type Props = {
-  annotatedFrame: string | null;
-  peopleCount: number;
-  zoneStatus: string;
-};
+interface CameraFeedPanelProps {
+  annotatedFrames: { "zone-1": string | null; "zone-2": string | null };
+  zoneData: { "zone-1": ZoneData; "zone-2": ZoneData };
+  zoneStatus: { "zone-1": ZoneStatusLevel; "zone-2": ZoneStatusLevel };
+}
 
-const zoneColorMap: Record<string, string> = {
+const statusBorderColor: Record<ZoneStatusLevel, string> = {
   SAFE: "#22c55e",
   MODERATE: "#eab308",
   CRITICAL: "#ef4444",
-  UNKNOWN: "#64748b"
 };
 
-export const CameraFeedPanel: React.FC<Props> = ({ annotatedFrame, peopleCount, zoneStatus }) => {
-  const normalizedStatus = String(zoneStatus || "UNKNOWN").toUpperCase();
-  const borderColor = zoneColorMap[normalizedStatus] ?? zoneColorMap.UNKNOWN;
-  const isCritical = normalizedStatus === "CRITICAL";
+const FeedTile: React.FC<{
+  zoneId: "zone-1" | "zone-2";
+  frame: string | null;
+  peopleCount: number;
+  status: ZoneStatusLevel;
+}> = ({ zoneId, frame, peopleCount, status }) => {
+  const zoneLabel = zoneId === "zone-1" ? "ZONE 1" : "ZONE 2";
+  const borderColor = statusBorderColor[status];
 
   return (
     <div
-      className="glass-card"
       style={{
         position: "relative",
         overflow: "hidden",
-        border: `1px solid color-mix(in srgb, ${borderColor} 50%, transparent)`,
-        boxShadow: `0 18px 48px color-mix(in srgb, ${borderColor} 18%, transparent)`
+        height: 200,
+        borderRadius: 12,
+        border: `1px solid color-mix(in srgb, ${borderColor} 85%, transparent)`,
+        boxShadow: `0 10px 26px color-mix(in srgb, ${borderColor} 18%, transparent)`,
+        background: "rgba(2, 6, 23, 0.78)",
       }}
     >
-      <div style={{ position: "absolute", top: 12, right: 12, zIndex: 4 }}>
-        <motion.div
-          animate={{ opacity: [0.45, 1, 0.45] }}
-          transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-          style={{
-            background: "rgba(0, 0, 0, 0.35)",
-            border: "1px solid rgba(255,255,255,0.2)",
-            borderRadius: 999,
-            padding: "5px 10px",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8
-          }}
-        >
-          <span
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: "50%",
-              background: "#ef4444",
-              boxShadow: "0 0 10px #ef4444"
-            }}
-          />
-          <span style={{ color: "#f8fafc", fontWeight: 800, fontSize: 11, letterSpacing: 1.2 }}>LIVE</span>
-        </motion.div>
-      </div>
-
-      <div style={{ position: "absolute", top: 12, left: 12, zIndex: 4 }}>
+      <div style={{ position: "absolute", top: 10, left: 10, zIndex: 3 }}>
         <div
           style={{
-            background: "rgba(0, 0, 0, 0.35)",
-            border: "1px solid rgba(255,255,255,0.2)",
             borderRadius: 999,
-            padding: "6px 12px",
+            padding: "5px 10px",
             color: "#f8fafc",
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: 700,
-            letterSpacing: 0.4
+            letterSpacing: 0.45,
+            background: "rgba(0, 0, 0, 0.38)",
+            border: "1px solid rgba(255,255,255,0.24)",
           }}
         >
-          Zone 1 • {peopleCount} people detected
+          {zoneLabel} • {peopleCount} people
         </div>
       </div>
 
-      {isCritical && (
+      <div style={{ position: "absolute", top: 10, right: 10, zIndex: 3 }}>
         <motion.div
-          animate={{ scale: [1, 1.25, 1], opacity: [0.4, 1, 0.4] }}
-          transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ opacity: [0.45, 1, 0.45] }}
+          transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
           style={{
-            position: "absolute",
-            bottom: 12,
-            left: 12,
-            zIndex: 4,
+            borderRadius: 999,
+            padding: "5px 10px",
+            color: "#f8fafc",
+            fontSize: 11,
+            fontWeight: 800,
+            letterSpacing: 0.8,
+            background: "rgba(0, 0, 0, 0.38)",
+            border: "1px solid rgba(255,255,255,0.24)",
             display: "inline-flex",
             alignItems: "center",
-            gap: 8,
-            color: "#fecaca",
-            fontWeight: 700,
-            fontSize: 12,
-            background: "rgba(127, 29, 29, 0.4)",
-            border: "1px solid rgba(239,68,68,0.45)",
-            borderRadius: 999,
-            padding: "5px 10px"
+            gap: 6,
           }}
         >
           <span
@@ -100,44 +76,71 @@ export const CameraFeedPanel: React.FC<Props> = ({ annotatedFrame, peopleCount, 
               height: 8,
               borderRadius: "50%",
               background: "#ef4444",
-              boxShadow: "0 0 10px #ef4444"
+              boxShadow: "0 0 10px #ef4444",
             }}
           />
-          CRITICAL
+          LIVE
         </motion.div>
-      )}
+      </div>
 
-      {annotatedFrame ? (
+      {frame ? (
         <img
-          src={`data:image/jpeg;base64,${annotatedFrame}`}
-          alt="Zone 1 annotated live feed"
-          style={{
-            width: "100%",
-            minHeight: 280,
-            maxHeight: 420,
-            objectFit: "cover",
-            display: "block",
-            background: "#020617"
-          }}
+          src={`data:image/jpeg;base64,${frame}`}
+          alt={`${zoneLabel} annotated live feed`}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
         />
       ) : (
         <div
           style={{
-            minHeight: 300,
+            width: "100%",
+            height: "100%",
             display: "grid",
             placeItems: "center",
-            color: "rgba(248, 250, 252, 0.65)",
+            color: "rgba(248, 250, 252, 0.68)",
             background:
-              "radial-gradient(circle at 20% 20%, rgba(56,189,248,0.08), transparent 45%), radial-gradient(circle at 80% 80%, rgba(239,68,68,0.08), transparent 45%), rgba(2,6,23,0.7)",
-            textAlign: "center",
-            padding: 20,
+              "radial-gradient(circle at 25% 25%, rgba(56,189,248,0.08), transparent 45%), radial-gradient(circle at 75% 75%, rgba(244,63,94,0.08), transparent 45%), rgba(2,6,23,0.85)",
+            fontSize: 14,
             fontWeight: 600,
-            letterSpacing: 0.3
+            letterSpacing: 0.35,
+            textAlign: "center",
+            padding: 16,
           }}
         >
-          Awaiting Zone 1 Camera Feed...
+          {zoneLabel} • Awaiting Feed...
         </div>
       )}
+    </div>
+  );
+};
+
+export const CameraFeedPanel: React.FC<CameraFeedPanelProps> = ({ annotatedFrames, zoneData, zoneStatus }) => {
+  return (
+    <div
+      className="glass-card"
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        height: 200,
+        display: "grid",
+        gridTemplateColumns: "1fr 1px 1fr",
+        borderRadius: 14,
+      }}
+    >
+      <FeedTile
+        zoneId="zone-1"
+        frame={annotatedFrames["zone-1"]}
+        peopleCount={zoneData["zone-1"].cam_people_count}
+        status={zoneStatus["zone-1"]}
+      />
+
+      <div style={{ width: 1, height: "100%", background: "rgba(255,255,255,0.12)" }} />
+
+      <FeedTile
+        zoneId="zone-2"
+        frame={annotatedFrames["zone-2"]}
+        peopleCount={zoneData["zone-2"].cam_people_count}
+        status={zoneStatus["zone-2"]}
+      />
     </div>
   );
 };
