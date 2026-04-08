@@ -50,8 +50,6 @@ export type ZoneStatus = {
 export type HardwareCommands = {
   z2_led: "green" | "yellow" | "red" | "gray";
   z3_led: "green" | "yellow" | "red" | "gray";
-  z2_buzzer: boolean;
-  z3_buzzer: boolean;
 };
 
 export type TrendPrediction = {

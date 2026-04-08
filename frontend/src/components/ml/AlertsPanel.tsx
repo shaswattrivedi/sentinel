@@ -9,13 +9,13 @@ const severityColor: Record<AlertItem["severity"], string> = {
 };
 
 type Props = {
-  alerts?: AlertItem[];   // 🔹 made optional
+  alerts?: AlertItem[];   // made optional
   loading?: boolean;
   fillHeight?: boolean;
 };
 
 export const AlertsPanel: React.FC<Props> = ({ alerts, loading, fillHeight }) => {
-  const safeAlerts: AlertItem[] = alerts ?? []; // 🔹 null-safe
+  const safeAlerts: AlertItem[] = alerts ?? []; // null-safe
   const panelStyle = {
     padding: 20,
     height: fillHeight ? "100%" : "clamp(220px, 30vh, 260px)",

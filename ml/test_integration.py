@@ -31,7 +31,7 @@ def test_predict_endpoint():
         response.raise_for_status()
         data = response.json()
         
-        print(f"  ✅ Status: {response.status_code}")
+        print(f"  SUCCESS: Status: {response.status_code}")
         print(f"  Risk Score: {data['risk_score']}")
         print(f"  System Status: {data['system_status']}")
         print(f"  Zone Status: {data['zone_status']}")
@@ -39,10 +39,10 @@ def test_predict_endpoint():
         print(f"  Trend Prediction: {data['trend_prediction']}")
         return True
     except requests.exceptions.ConnectionError:
-        print(f"  ❌ Cannot connect to ML service at {ML_SERVICE_URL}")
+        print(f"  ERROR: Cannot connect to ML service at {ML_SERVICE_URL}")
         return False
     except Exception as e:
-        print(f"  ❌ Error: {e}")
+        print(f"  ERROR: Error: {e}")
         return False
 
 
@@ -55,16 +55,16 @@ def test_dashboard_hardware():
         response.raise_for_status()
         data = response.json()
         
-        print(f"  ✅ Status: {response.status_code}")
+        print(f"  SUCCESS: Status: {response.status_code}")
         print(f"  Zone Status: {data.get('zone_status', 'N/A')}")
         print(f"  Hardware Commands: {data.get('hardware_commands', 'N/A')}")
         print(f"  Trend Prediction: {data.get('trend_prediction', 'N/A')}")
         return True
     except requests.exceptions.ConnectionError:
-        print(f"  ❌ Cannot connect to ML service at {ML_SERVICE_URL}")
+        print(f"  ERROR: Cannot connect to ML service at {ML_SERVICE_URL}")
         return False
     except Exception as e:
-        print(f"  ❌ Error: {e}")
+        print(f"  ERROR: Error: {e}")
         return False
 
 
@@ -77,16 +77,16 @@ def test_dashboard_overview():
         response.raise_for_status()
         data = response.json()
         
-        print(f"  ✅ Status: {response.status_code}")
+        print(f"  SUCCESS: Status: {response.status_code}")
         print(f"  Risk Level: {data.get('risk_level', 'N/A')}")
         print(f"  Risk Score: {data.get('risk_score', 'N/A')}")
         print(f"  System State: {data.get('system_state', 'N/A')}")
         return True
     except requests.exceptions.ConnectionError:
-        print(f"  ❌ Cannot connect to ML service at {ML_SERVICE_URL}")
+        print(f"  ERROR: Cannot connect to ML service at {ML_SERVICE_URL}")
         return False
     except Exception as e:
-        print(f"  ❌ Error: {e}")
+        print(f"  ERROR: Error: {e}")
         return False
 
 
@@ -120,15 +120,15 @@ def test_scenario_sequence():
             status = data["system_status"]
             hw = data["hardware_commands"]
             
-            led_emoji = {"green": "🟢", "yellow": "🟡", "red": "🔴"}.get
+            led_emoji = {"green": "[GREEN]", "yellow": "[YELLOW]", "red": "[RED]"}.get
             
             print(f"  Status: {status} | Risk: {data['risk_score']:.1f}")
-            print(f"  Zone 2 LED: {led_emoji(hw['z2_led'], '⚪')} {hw['z2_led']} | Buzzer: {'🔊' if hw['z2_buzzer'] else '🔇'}")
-            print(f"  Zone 3 LED: {led_emoji(hw['z3_led'], '⚪')} {hw['z3_led']} | Buzzer: {'🔊' if hw['z3_buzzer'] else '🔇'}")
+            print(f"  Zone 2 LED: {led_emoji(hw['z2_led'], '[OFF]')} {hw['z2_led']} | Buzzer: {'ON' if hw['z2_buzzer'] else 'OFF'}")
+            print(f"  Zone 3 LED: {led_emoji(hw['z3_led'], '[OFF]')} {hw['z3_led']} | Buzzer: {'ON' if hw['z3_buzzer'] else 'OFF'}")
             print(f"  Trend: {data['trend_prediction']['trend']} → {data['trend_prediction']['prediction']}")
             
         except Exception as e:
-            print(f"  ❌ Error: {e}")
+            print(f"  ERROR: Error: {e}")
             return False
         
         import time
@@ -157,7 +157,7 @@ def main():
             result = test_func()
             results.append((name, result))
         except Exception as e:
-            print(f"  ❌ Test failed with exception: {e}")
+            print(f"  ERROR: Test failed with exception: {e}")
             results.append((name, False))
     
     print("\n" + "="*60)
@@ -166,15 +166,15 @@ def main():
     
     all_passed = True
     for name, passed in results:
-        status = "✅ PASS" if passed else "❌ FAIL"
+        status = "SUCCESS: PASS" if passed else "ERROR: FAIL"
         print(f"  {status}: {name}")
         if not passed:
             all_passed = False
     
     if all_passed:
-        print("\n🎉 All tests passed!")
+        print("\n All tests passed!")
     else:
-        print("\n⚠️  Some tests failed. Make sure the ML service is running:")
+        print("\nWARNING:  Some tests failed. Make sure the ML service is running:")
         print("   cd ml && python main.py")
     
     return 0 if all_passed else 1

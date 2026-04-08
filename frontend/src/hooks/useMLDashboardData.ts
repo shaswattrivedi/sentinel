@@ -29,9 +29,7 @@ export type DashboardDataState = DashboardSnapshotData & {
 const UNKNOWN_ZONE_STATUS: ZoneStatus = { z1: "UNKNOWN", z2: "UNKNOWN", z3: "UNKNOWN" };
 const DEFAULT_HARDWARE_COMMANDS: HardwareCommands = {
   z2_led: "gray",
-  z3_led: "gray",
-  z2_buzzer: false,
-  z3_buzzer: false
+  z3_led: "gray"
 };
 const DEFAULT_TREND: TrendPrediction = {
   trend: "UNKNOWN",

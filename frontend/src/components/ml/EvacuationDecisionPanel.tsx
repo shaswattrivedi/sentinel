@@ -37,7 +37,7 @@ export const EvacuationDecisionPanel: React.FC<Props> = ({ decision, loading }) 
       boxShadow: `0 8px 32px color-mix(in srgb, ${color} 15%, transparent)`,
       background: `color-mix(in srgb, ${color} 5%, var(--color-card))`
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
         <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "2px" }}>EVACUATION DECISION</div>
         {typeof decision.confidence === "number" && (
           <div style={{ textAlign: "right" }}>
@@ -59,22 +59,23 @@ export const EvacuationDecisionPanel: React.FC<Props> = ({ decision, loading }) 
           }}>
             {decision.state}
           </div>
-          {decision.recommendedDirection && (
-            <div style={{ color: "#f8fafc", marginTop: 16, fontSize: 16, fontWeight: 500, display: "flex", alignItems: "flex-start", gap: 8 }}>
-              <span style={{ color, fontSize: 20, lineHeight: 1 }}>↪</span> 
-              <span>Direction: <span style={{ color: "var(--color-info)", fontWeight: 600 }}>{decision.recommendedDirection}</span></span>
+          {(decision.recommendedDirection || decision.rationale) && (
+            <div style={{ color: "#f8fafc", marginTop: 16, fontSize: 15, display: "flex", alignItems: "flex-start", gap: 10, background: "rgba(255,255,255,0.06)", padding: "14px 16px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2, color: "#f8fafc" }}>
+                 <line x1="5" y1="12" x2="19" y2="12"></line>
+                 <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <span style={{ color: "rgba(248, 250, 252, 0.9)", fontSize: 14, lineHeight: 1.5, fontWeight: 500 }}>
+                  <strong style={{ color: "#f8fafc", letterSpacing: "0.5px" }}>Insight: </strong>
+                  {decision.recommendedDirection && decision.rationale
+                    ? `Proceed ${decision.recommendedDirection}. ${decision.rationale}`
+                    : decision.rationale || `Optimal routing via ${decision.recommendedDirection}.`
+                  }
+                </span>
+              </div>
             </div>
           )}
-          {decision.rationale && (
-            <div style={{ color: "rgba(248, 250, 252, 0.65)", marginTop: 8, fontSize: 15, lineHeight: 1.5, maxWidth: "90%" }}>
-              {decision.rationale}
-            </div>
-          )}
-        </div>
-        <div style={{ textAlign: "right", marginTop: "auto" }}>
-          <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: 12 }}>
-            Updated {new Date(decision.updatedAt).toLocaleTimeString()}
-          </div>
         </div>
       </div>
     </div>

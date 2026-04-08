@@ -75,11 +75,11 @@ class SensorSimulator:
             self._send_camera_telemetry(z1_cam, timestamp)
             return response.json()
         except requests.exceptions.ConnectionError:
-            print(f"\n❌ Cannot connect to ML service at {ML_SERVICE_URL}")
+            print(f"\nERROR: Cannot connect to ML service at {ML_SERVICE_URL}")
             print("   Make sure the ML service is running: cd ml && python main.py")
             return {}
         except Exception as e:
-            print(f"\n❌ Error sending data: {e}")
+            print(f"\nERROR: Error sending data: {e}")
             return {}
 
     def _send_camera_telemetry(self, people_count: int, timestamp: str) -> None:
@@ -97,7 +97,7 @@ class SensorSimulator:
             )
             response.raise_for_status()
         except Exception as e:
-            print(f"⚠️ Camera telemetry post failed: {e}")
+            print(f"WARNING: Camera telemetry post failed: {e}")
 
     def _print_status(self, data: Dict[str, Any], z1: int, z2: float, z3: float):
         """Pretty print the current status."""
@@ -111,36 +111,36 @@ class SensorSimulator:
         trend = data.get("trend_prediction", {})
 
         # Status colors
-        status_icon = {"SAFE": "🟢", "MODERATE": "🟡", "CRITICAL": "🔴"}.get(status, "⚪")
-        led_icon = {"green": "🟢", "yellow": "🟡", "red": "🔴"}.get
+        status_icon = {"SAFE": "[GREEN]", "MODERATE": "[YELLOW]", "CRITICAL": "[RED]"}.get(status, "[OFF]")
+        led_icon = {"green": "[GREEN]", "yellow": "[YELLOW]", "red": "[RED]"}.get
 
         print(f"\n{'='*60}")
         print(f"⏱️  Time: {datetime.now().strftime('%H:%M:%S')} | Iteration: {self.iteration}")
         print(f"{'='*60}")
-        print(f"\n📊 INPUT DATA:")
+        print(f"\n INPUT DATA:")
         print(f"   Zone 1 (Camera):     {z1} people")
         print(f"   Zone 2 (PIR+Ultra):  {z2:.1f}% density")
         print(f"   Zone 3 (PIR+Ultra):  {z3:.1f}% density")
-        print(f"\n🎯 RISK ASSESSMENT:")
+        print(f"\n RISK ASSESSMENT:")
         print(f"   Risk Score:    {risk:.1f}/100 {status_icon} {status}")
         print(f"   Zone 1 Status: {zones.get('z1', 'N/A')}")
         print(f"   Zone 2 Status: {zones.get('z2', 'N/A')}")
         print(f"   Zone 3 Status: {zones.get('z3', 'N/A')}")
-        print(f"\n🚦 HARDWARE COMMANDS:")
-        print(f"   Zone 2 LED:    {led_icon(hw.get('z2_led', ''), '⚪')} {hw.get('z2_led', 'N/A')}")
-        print(f"   Zone 3 LED:    {led_icon(hw.get('z3_led', ''), '⚪')} {hw.get('z3_led', 'N/A')}")
-        print(f"   Zone 2 Buzzer: {'🔊 ON' if hw.get('z2_buzzer') else '🔇 OFF'}")
-        print(f"   Zone 3 Buzzer: {'🔊 ON' if hw.get('z3_buzzer') else '🔇 OFF'}")
-        print(f"\n📈 TREND PREDICTION:")
+        print(f"\n HARDWARE COMMANDS:")
+        print(f"   Zone 2 LED:    {led_icon(hw.get('z2_led', ''), '[OFF]')} {hw.get('z2_led', 'N/A')}")
+        print(f"   Zone 3 LED:    {led_icon(hw.get('z3_led', ''), '[OFF]')} {hw.get('z3_led', 'N/A')}")
+        print(f"   Zone 2 Buzzer: {'ON ON' if hw.get('z2_buzzer') else 'OFF OFF'}")
+        print(f"   Zone 3 Buzzer: {'ON ON' if hw.get('z3_buzzer') else 'OFF OFF'}")
+        print(f"\n TREND PREDICTION:")
         print(f"   Trend:      {trend.get('trend', 'N/A')}")
         print(f"   Prediction: {trend.get('prediction', 'N/A')}")
         print(f"   Predicted:  {trend.get('predicted_density', 0):.1f}%")
         print(f"   Confidence: {trend.get('confidence', 0)*100:.0f}%")
-        print(f"\n💬 REASON: {data.get('reason', 'N/A')}")
+        print(f"\n REASON: {data.get('reason', 'N/A')}")
 
     def run_scenario(self, generator: Callable[[], tuple], duration: int = 30):
         """Run a scenario using the provided data generator."""
-        print(f"\n🚀 Starting simulation for {duration} seconds...")
+        print(f"\n Starting simulation for {duration} seconds...")
         print(f"   Interval: {self.interval}s between readings")
         print(f"   Press Ctrl+C to stop\n")
 
@@ -256,7 +256,7 @@ class SensorSimulator:
 def interactive_menu():
     """Display interactive scenario selection menu."""
     print("\n" + "="*60)
-    print("🔬 SENTINEL HARDWARE SIMULATOR")
+    print(" SENTINEL HARDWARE SIMULATOR")
     print("="*60)
     print("\nSelect a test scenario:\n")
     print("  1. NORMAL          - Low density, all zones safe")
@@ -308,19 +308,19 @@ def main():
 
     if args.scenario:
         if args.scenario not in scenarios:
-            print(f"❌ Invalid scenario: {args.scenario}")
+            print(f"ERROR: Invalid scenario: {args.scenario}")
             sys.exit(1)
         name, generator = scenarios[args.scenario]
-        print(f"\n🎬 Running scenario: {name}")
+        print(f"\n Running scenario: {name}")
         simulator.run_scenario(generator, args.duration)
     else:
         while True:
             choice, duration = interactive_menu()
             if choice is None:
-                print("\n👋 Goodbye!")
+                print("\n Goodbye!")
                 break
             name, generator = scenarios[choice]
-            print(f"\n🎬 Running scenario: {name}")
+            print(f"\n Running scenario: {name}")
             simulator.run_scenario(generator, duration)
 
 
