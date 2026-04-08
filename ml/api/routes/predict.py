@@ -23,12 +23,14 @@ def predict(
 
         # Store hardware status for dashboard display
         store.update_hardware_status(
-            zone_status=result.get("zone_status", {}),
-            hardware_commands=result.get("hardware_commands", {}),
-            trend_prediction=result.get("trend_prediction", {}),
             risk_score=float(result.get("risk_score", 0.0)),
-            z1_people_count=int(payload.z1_cam_count),
-            timestamp=payload.timestamp,
+            system_status=str(result.get("system_status", "SAFE")),
+            zone_status=result.get("zone_status", {}),
+            zone_data=result.get("zone_data", {}),
+            annotated_frames=result.get("annotated_frames", {}),
+            trend_prediction=result.get("trend_prediction", {}),
+            alerts=agg_service.alerts(),
+            timestamp=dashboard_output.timestamp,
         )
 
         return result

@@ -1,19 +1,23 @@
 from datetime import datetime, timezone
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, validator
 
 
-class PredictRequest(BaseModel):
-    """IoT-native prediction input for multi-zone fusion."""
+class ZoneData(BaseModel):
+    cam_people_count: int = 0
+    cam_confidence: float = 0.75
+    validation_score: float = 0.0
 
-    z1_cam_count: int = Field(ge=0, description="YOLO people count for Zone 1 camera")
-    z2_density_score: float = Field(ge=0, le=100, description="Arduino density score for Zone 2")
-    z3_density_score: float = Field(ge=0, le=100, description="Arduino density score for Zone 3")
-    timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
-        description="Optional event timestamp in UTC",
-    )
+
+class PredictRequest(BaseModel):
+    timestamp: str
+    zone_1: Optional[ZoneData] = ZoneData()
+    zone_2: Optional[ZoneData] = ZoneData()
+    annotated_frames: Optional[Dict[str, Optional[str]]] = Field(default_factory=dict)
+
+    class Config:
+        extra = "allow"
 
 
 # ---------------------------------------------------------------------------

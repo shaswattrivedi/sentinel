@@ -8,14 +8,28 @@ from sentinel_ml.outputs.contracts import IntelligenceOutput
 
 @dataclass
 class HardwareStatus:
-    """Latest hardware status from ESP32 sensors."""
-    zone_status: Dict[str, str] = field(default_factory=dict)
-    hardware_commands: Dict[str, Any] = field(default_factory=dict)
-    trend_prediction: Dict[str, Any] = field(default_factory=dict)
+    """Latest super-node snapshot for dashboard responses."""
+
     risk_score: float = 0.0
-    z1_people_count: int = 0
-    latest_annotated_frame: Optional[str] = None
-    last_updated: Optional[datetime] = None
+    system_status: str = "SAFE"
+    zone_status: Dict[str, str] = field(default_factory=lambda: {"zone-1": "SAFE", "zone-2": "SAFE"})
+    zone_data: Dict[str, Dict[str, Any]] = field(
+        default_factory=lambda: {
+            "zone-1": {"cam_people_count": 0, "validation_score": 0},
+            "zone-2": {"cam_people_count": 0, "validation_score": 0},
+        }
+    )
+    annotated_frames: Dict[str, Optional[str]] = field(default_factory=lambda: {"zone-1": None, "zone-2": None})
+    trend_prediction: Dict[str, Any] = field(
+        default_factory=lambda: {
+            "trend": "STABLE",
+            "prediction": "LOW_TREND",
+            "predicted_density": 0,
+            "confidence": 0.75,
+        }
+    )
+    alerts: List[Dict[str, Any]] = field(default_factory=list)
+    timestamp: Optional[datetime] = None
 
 
 @dataclass
@@ -34,19 +48,23 @@ class InMemoryStore:
 
     def update_hardware_status(
         self,
-        zone_status: Dict[str, str],
-        hardware_commands: Dict[str, Any],
-        trend_prediction: Dict[str, Any],
         risk_score: float,
-        z1_people_count: int,
+        system_status: str,
+        zone_status: Dict[str, str],
+        zone_data: Dict[str, Dict[str, Any]],
+        annotated_frames: Dict[str, Optional[str]],
+        trend_prediction: Dict[str, Any],
+        alerts: List[Dict[str, Any]],
         timestamp: datetime,
     ) -> None:
-        self.hardware_status.zone_status = zone_status
-        self.hardware_status.hardware_commands = hardware_commands
-        self.hardware_status.trend_prediction = trend_prediction
         self.hardware_status.risk_score = risk_score
-        self.hardware_status.z1_people_count = z1_people_count
-        self.hardware_status.last_updated = timestamp
+        self.hardware_status.system_status = system_status
+        self.hardware_status.zone_status = zone_status
+        self.hardware_status.zone_data = zone_data
+        self.hardware_status.annotated_frames = annotated_frames
+        self.hardware_status.trend_prediction = trend_prediction
+        self.hardware_status.alerts = alerts
+        self.hardware_status.timestamp = timestamp
 
     def update_camera_snapshot(
         self,
@@ -54,9 +72,9 @@ class InMemoryStore:
         z1_people_count: int,
         timestamp: datetime,
     ) -> None:
-        self.hardware_status.latest_annotated_frame = latest_annotated_frame
-        self.hardware_status.z1_people_count = z1_people_count
-        self.hardware_status.last_updated = timestamp
+        self.hardware_status.annotated_frames["zone-1"] = latest_annotated_frame
+        self.hardware_status.zone_data["zone-1"]["cam_people_count"] = z1_people_count
+        self.hardware_status.timestamp = timestamp
 
     def get_recent_outputs(self, limit: int = 100) -> List[IntelligenceOutput]:
         return list(self.outputs)[-limit:]

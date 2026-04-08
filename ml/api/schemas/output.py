@@ -1,20 +1,11 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
-class ZoneStatusResponse(BaseModel):
-    z1: str
-    z2: str
-    z3: str
-
-
-class HardwareCommandsResponse(BaseModel):
-    """Commands to send back to ESP32 for LED/Buzzer control."""
-    z2_led: str = Field(description="LED color for Zone 2: green/yellow/red")
-    z3_led: str = Field(description="LED color for Zone 3: green/yellow/red")
-    z2_buzzer: bool = Field(description="Buzzer state for Zone 2")
-    z3_buzzer: bool = Field(description="Buzzer state for Zone 3")
+class ZoneDataResponse(BaseModel):
+    cam_people_count: int = 0
+    validation_score: float = 0.0
 
 
 class TrendPredictionResponse(BaseModel):
@@ -28,22 +19,30 @@ class TrendPredictionResponse(BaseModel):
 class PredictResponse(BaseModel):
     risk_score: float = Field(ge=0.0, le=100.0)
     system_status: str
-    zone_status: ZoneStatusResponse
+    zone_status: Dict[str, str]
     reason: str
     features: dict
-    hardware_commands: HardwareCommandsResponse = Field(description="Commands for ESP32 hardware")
     trend_prediction: TrendPredictionResponse = Field(description="ML-based trend prediction")
+    zone_data: Dict[str, ZoneDataResponse] = Field(default_factory=dict)
+    annotated_frames: Dict[str, Optional[str]] = Field(default_factory=dict)
 
 
 class HardwareStatusResponse(BaseModel):
-    """Current hardware status for dashboard display."""
+    """Current super-node snapshot for dashboard display."""
+
     timestamp: Optional[datetime] = None
-    zone_status: ZoneStatusResponse = Field(default_factory=lambda: ZoneStatusResponse(z1="UNKNOWN", z2="UNKNOWN", z3="UNKNOWN"))
-    hardware_commands: HardwareCommandsResponse = Field(default_factory=lambda: HardwareCommandsResponse(z2_led="gray", z3_led="gray", z2_buzzer=False, z3_buzzer=False))
-    trend_prediction: TrendPredictionResponse = Field(default_factory=lambda: TrendPredictionResponse(trend="UNKNOWN", prediction="NO_DATA", predicted_density=0.0, confidence=0.0))
     risk_score: float = 0.0
-    z1_people_count: int = 0
-    latest_annotated_frame: Optional[str] = None
+    system_status: str = "SAFE"
+    zone_status: Dict[str, str] = Field(default_factory=lambda: {"zone-1": "SAFE", "zone-2": "SAFE"})
+    zone_data: Dict[str, ZoneDataResponse] = Field(
+        default_factory=lambda: {
+            "zone-1": ZoneDataResponse(),
+            "zone-2": ZoneDataResponse(),
+        }
+    )
+    annotated_frames: Dict[str, Optional[str]] = Field(default_factory=lambda: {"zone-1": None, "zone-2": None})
+    trend_prediction: TrendPredictionResponse = Field(default_factory=lambda: TrendPredictionResponse(trend="UNKNOWN", prediction="NO_DATA", predicted_density=0.0, confidence=0.0))
+    alerts: List[dict] = Field(default_factory=list)
 
 
 class OverviewResponse(BaseModel):

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from sentinel_ml.utils.time_utils import coerce_timestamp
 
@@ -9,68 +9,37 @@ SAFE = "SAFE"
 MODERATE = "MODERATE"
 CRITICAL = "CRITICAL"
 
-# LED Colors matching traffic signal module
-LED_GREEN = "green"
-LED_YELLOW = "yellow"
-LED_RED = "red"
-
 
 @dataclass
-class IoTDerivedFeatures:
-    avg_density: float
-    density_gradient: float
-    zone_disparity: float
-    cam_density_factor: float
-
-
-@dataclass
-class HardwareCommands:
-    """Commands to send back to ESP32 for LED and buzzer control."""
-    z2_led: str
-    z3_led: str
-    z2_buzzer: bool
-    z3_buzzer: bool
+class ZoneRiskComponents:
+    camera_score: float
+    sensor_score: float
+    zone_risk: float
 
 
 @dataclass
 class TrendPrediction:
-    """Pattern ML prediction for crowd density trends."""
-    trend: str  # INCREASING, STABLE, DECREASING
-    prediction: str  # LOW_TREND, MODERATE_TREND, HIGH_RISK
+    trend: str
+    prediction: str
     predicted_density: float
     confidence: float
 
 
 class IoTRiskEngine:
-    """Hardware-native risk engine for Z1 camera + Z2/Z3 density sensors."""
+    """Risk engine for two identical super nodes with camera + validation sensors."""
 
-    def __init__(
-        self,
-        w_sensor_density: float = 0.55,
-        w_camera_count: float = 0.25,
-        w_zone_disparity: float = 0.20,
-    ) -> None:
-        self.w_sensor_density = w_sensor_density
-        self.w_camera_count = w_camera_count
-        self.w_zone_disparity = w_zone_disparity
+    def __init__(self) -> None:
         self._last_timestamp: Optional[datetime] = None
-        self._last_avg_density: Optional[float] = None
+        self._last_avg_zone_risk: Optional[float] = None
 
     @staticmethod
-    def _clip_01(value: float) -> float:
-        return max(0.0, min(1.0, value))
+    def _clip(value: float, lo: float, hi: float) -> float:
+        return max(lo, min(hi, value))
 
-    def _sensor_status(self, density_score: float) -> str:
-        if density_score > 75:
+    def _status_from_score(self, score: float) -> str:
+        if score > 75:
             return CRITICAL
-        if density_score > 40:
-            return MODERATE
-        return SAFE
-
-    def _camera_status(self, cam_count: int) -> str:
-        if cam_count > 5:
-            return CRITICAL
-        if cam_count > 2:
+        if score > 40:
             return MODERATE
         return SAFE
 
@@ -81,125 +50,55 @@ class IoTRiskEngine:
             return MODERATE
         return SAFE
 
-    def _compute_features(
-        self,
-        timestamp: datetime,
-        z1_cam_count: int,
-        z2_density_score: float,
-        z3_density_score: float,
-    ) -> IoTDerivedFeatures:
-        avg_density = (z2_density_score + z3_density_score) / 2.0
+    def _compute_zone_risk(self, cam_people_count: int, validation_score: float) -> ZoneRiskComponents:
+        camera_score = self._clip(cam_people_count / 20.0, 0.0, 1.0) * 100.0
+        sensor_score = self._clip(validation_score, 0.0, 100.0)
+        zone_risk = (0.60 * camera_score) + (0.40 * sensor_score)
+        return ZoneRiskComponents(
+            camera_score=round(camera_score, 2),
+            sensor_score=round(sensor_score, 2),
+            zone_risk=round(zone_risk, 2),
+        )
 
-        # Density gradient: per-minute change in averaged sensor density score.
-        density_gradient = 0.0
-        if self._last_timestamp is not None and self._last_avg_density is not None:
+    def _compute_risk_score(self, zone_1_risk: float, zone_2_risk: float) -> Dict[str, float]:
+        zone_disparity = abs(zone_1_risk - zone_2_risk)
+        disparity_boost = 10.0 if zone_disparity > 40.0 else 0.0
+        avg_zone_risk = (zone_1_risk + zone_2_risk) / 2.0
+        risk_score = min(100.0, avg_zone_risk + disparity_boost)
+        return {
+            "zone_disparity": round(zone_disparity, 2),
+            "disparity_boost": round(disparity_boost, 2),
+            "avg_zone_risk": round(avg_zone_risk, 2),
+            "risk_score": round(risk_score, 2),
+        }
+
+    def _compute_trend_prediction(self, timestamp: datetime, avg_zone_risk: float) -> TrendPrediction:
+        gradient = 0.0
+        if self._last_timestamp is not None and self._last_avg_zone_risk is not None:
             delta_s = max((timestamp - self._last_timestamp).total_seconds(), 1.0)
-            density_gradient = ((avg_density - self._last_avg_density) / delta_s) * 60.0
-
-        zone_disparity = abs(z2_density_score - z3_density_score)
-        cam_density_factor = self._clip_01(z1_cam_count / 10.0)
+            gradient = ((avg_zone_risk - self._last_avg_zone_risk) / delta_s) * 60.0
 
         self._last_timestamp = timestamp
-        self._last_avg_density = avg_density
+        self._last_avg_zone_risk = avg_zone_risk
 
-        return IoTDerivedFeatures(
-            avg_density=avg_density,
-            density_gradient=density_gradient,
-            zone_disparity=zone_disparity,
-            cam_density_factor=cam_density_factor,
-        )
-
-    def _compute_risk_score(self, features: IoTDerivedFeatures) -> float:
-        sensor_norm = self._clip_01(features.avg_density / 100.0)
-        disparity_norm = self._clip_01(features.zone_disparity / 100.0)
-
-        # Optional trend boost: fast positive growth slightly increases risk.
-        gradient_boost = self._clip_01(max(features.density_gradient, 0.0) / 20.0) * 0.10
-
-        risk_01 = (
-            self.w_sensor_density * sensor_norm
-            + self.w_camera_count * features.cam_density_factor
-            + self.w_zone_disparity * disparity_norm
-            + gradient_boost
-        )
-        return round(self._clip_01(risk_01) * 100.0, 2)
-
-    def _build_reason(self, zone_status: Dict[str, str], features: IoTDerivedFeatures) -> str:
-        observations = []
-        if zone_status["z2"] == CRITICAL:
-            observations.append("high density detected in Zone 2")
-        elif zone_status["z2"] == MODERATE:
-            observations.append("moderate density detected in Zone 2")
-
-        if zone_status["z3"] == CRITICAL:
-            observations.append("high density detected in Zone 3")
-        elif zone_status["z3"] == MODERATE:
-            observations.append("moderate density detected in Zone 3")
-
-        if zone_status["z1"] == CRITICAL:
-            observations.append("high camera congestion in Zone 1")
-        elif zone_status["z1"] == MODERATE:
-            observations.append("moderate camera congestion in Zone 1")
-
-        if features.zone_disparity >= 25:
-            observations.append("strong cross-zone imbalance between Z2 and Z3")
-
-        if features.density_gradient > 8:
-            observations.append("rapid increase in average density")
-
-        if not observations:
-            return "All zones are stable with low congestion signals."
-
-        sentence = ", and ".join(observations)
-        return sentence[:1].upper() + sentence[1:] + "."
-
-    def _status_to_led(self, status: str) -> str:
-        """Convert zone status to traffic signal LED color."""
-        if status == CRITICAL:
-            return LED_RED
-        if status == MODERATE:
-            return LED_YELLOW
-        return LED_GREEN
-
-    def _should_activate_buzzer(self, status: str) -> bool:
-        """Determine if buzzer should be active (only for CRITICAL)."""
-        return status == CRITICAL
-
-    def _compute_hardware_commands(self, zone_status: Dict[str, str]) -> HardwareCommands:
-        """Generate hardware commands for ESP32 LED/Buzzer control."""
-        return HardwareCommands(
-            z2_led=self._status_to_led(zone_status["z2"]),
-            z3_led=self._status_to_led(zone_status["z3"]),
-            z2_buzzer=self._should_activate_buzzer(zone_status["z2"]),
-            z3_buzzer=self._should_activate_buzzer(zone_status["z3"]),
-        )
-
-    def _compute_trend_prediction(self, features: IoTDerivedFeatures) -> TrendPrediction:
-        """Pattern ML model: predict future crowd density trend."""
-        avg = features.avg_density
-        gradient = features.density_gradient
-
-        # Determine trend direction based on density gradient
-        if gradient > 5:
+        if gradient > 5.0:
             trend = "INCREASING"
-        elif gradient < -5:
+        elif gradient < -5.0:
             trend = "DECREASING"
         else:
             trend = "STABLE"
 
-        # Predict future density (simple linear projection + current avg)
-        predicted_density = min(100.0, max(0.0, avg + (gradient * 0.5)))
+        predicted_density = self._clip(avg_zone_risk + (gradient * 0.5), 0.0, 100.0)
 
-        # Compute prediction label
-        if avg > 70 or predicted_density > 70:
+        if predicted_density > 75.0 or avg_zone_risk > 75.0:
             prediction = "HIGH_RISK"
-            confidence = 0.85
-        elif avg > 40 or predicted_density > 40:
+            confidence = 0.88
+        elif predicted_density > 40.0 or avg_zone_risk > 40.0:
             prediction = "MODERATE_TREND"
-            confidence = 0.75
+            confidence = 0.78
         else:
             prediction = "LOW_TREND"
-            confidence = 0.90
+            confidence = 0.75
 
         return TrendPrediction(
             trend=trend,
@@ -208,42 +107,67 @@ class IoTRiskEngine:
             confidence=confidence,
         )
 
+    def _build_reason(self, zone_status: Dict[str, str], zone_disparity: float, disparity_boost: float) -> str:
+        observations = []
+        if zone_status["zone-1"] == CRITICAL:
+            observations.append("Zone 1 is critical")
+        elif zone_status["zone-1"] == MODERATE:
+            observations.append("Zone 1 is moderate")
+
+        if zone_status["zone-2"] == CRITICAL:
+            observations.append("Zone 2 is critical")
+        elif zone_status["zone-2"] == MODERATE:
+            observations.append("Zone 2 is moderate")
+
+        if disparity_boost > 0:
+            observations.append(f"cross-zone disparity detected ({zone_disparity:.1f})")
+
+        if not observations:
+            return "Both zones are stable with low risk signals."
+
+        return ", ".join(observations) + "."
+
     def predict(
         self,
-        z1_cam_count: int,
-        z2_density_score: float,
-        z3_density_score: float,
+        zone_1_cam_people_count: int,
+        zone_1_validation_score: float,
+        zone_2_cam_people_count: int,
+        zone_2_validation_score: float,
         timestamp,
     ) -> Dict[str, object]:
         ts = coerce_timestamp(timestamp)
-        features = self._compute_features(ts, z1_cam_count, z2_density_score, z3_density_score)
+
+        zone_1 = self._compute_zone_risk(zone_1_cam_people_count, zone_1_validation_score)
+        zone_2 = self._compute_zone_risk(zone_2_cam_people_count, zone_2_validation_score)
+
+        risk_parts = self._compute_risk_score(zone_1.zone_risk, zone_2.zone_risk)
 
         zone_status = {
-            "z1": self._camera_status(z1_cam_count),
-            "z2": self._sensor_status(z2_density_score),
-            "z3": self._sensor_status(z3_density_score),
+            "zone-1": self._status_from_score(zone_1.zone_risk),
+            "zone-2": self._status_from_score(zone_2.zone_risk),
         }
         system_status = self._master_status(zone_status)
-        risk_score = self._compute_risk_score(features)
-        hardware_commands = self._compute_hardware_commands(zone_status)
-        trend_prediction = self._compute_trend_prediction(features)
+        trend_prediction = self._compute_trend_prediction(ts, risk_parts["avg_zone_risk"])
 
         return {
-            "risk_score": risk_score,
+            "risk_score": risk_parts["risk_score"],
             "system_status": system_status,
             "zone_status": zone_status,
-            "reason": self._build_reason(zone_status, features),
+            "reason": self._build_reason(
+                zone_status,
+                zone_disparity=risk_parts["zone_disparity"],
+                disparity_boost=risk_parts["disparity_boost"],
+            ),
             "features": {
-                "avg_density": round(features.avg_density, 2),
-                "density_gradient": round(features.density_gradient, 2),
-                "zone_disparity": round(features.zone_disparity, 2),
-                "cam_density_factor": round(features.cam_density_factor, 3),
-            },
-            "hardware_commands": {
-                "z2_led": hardware_commands.z2_led,
-                "z3_led": hardware_commands.z3_led,
-                "z2_buzzer": hardware_commands.z2_buzzer,
-                "z3_buzzer": hardware_commands.z3_buzzer,
+                "zone_1_camera_score": zone_1.camera_score,
+                "zone_1_sensor_score": zone_1.sensor_score,
+                "zone_1_risk": zone_1.zone_risk,
+                "zone_2_camera_score": zone_2.camera_score,
+                "zone_2_sensor_score": zone_2.sensor_score,
+                "zone_2_risk": zone_2.zone_risk,
+                "avg_zone_risk": risk_parts["avg_zone_risk"],
+                "zone_disparity": risk_parts["zone_disparity"],
+                "disparity_boost": risk_parts["disparity_boost"],
             },
             "trend_prediction": {
                 "trend": trend_prediction.trend,

@@ -9,6 +9,7 @@ from sentinel_ml.inputs.schemas import CameraFrameInput, SensorHealthStatus, Sen
 from sentinel_ml.iot.engine import CRITICAL, MODERATE, SAFE, IoTRiskEngine
 from sentinel_ml.outputs.contracts import IntelligenceOutput
 from sentinel_ml.pipeline import SentinelPipeline
+from sentinel_ml.utils.time_utils import coerce_timestamp
 
 
 class MLService:
@@ -100,23 +101,54 @@ class MLService:
         }
 
     def run_iot_predict(self, payload: PredictRequest) -> Dict[str, object]:
-        """Run the hardware-native IoT risk model (Z1 camera + Z2/Z3 density sensors)."""
-        return self.iot_engine.predict(
-            z1_cam_count=payload.z1_cam_count,
-            z2_density_score=payload.z2_density_score,
-            z3_density_score=payload.z3_density_score,
+        """Run the super-node IoT risk model for zone-1 and zone-2."""
+
+        payload_dict = payload.dict()
+
+        zone_1 = payload_dict.get("zone-1") or payload_dict.get("zone_1") or {}
+        zone_2 = payload_dict.get("zone-2") or payload_dict.get("zone_2") or {}
+
+        zone_1_cam_people_count = int(zone_1.get("cam_people_count", 0))
+        zone_1_validation_score = float(zone_1.get("validation_score", 0.0))
+        zone_2_cam_people_count = int(zone_2.get("cam_people_count", 0))
+        zone_2_validation_score = float(zone_2.get("validation_score", 0.0))
+
+        result = self.iot_engine.predict(
+            zone_1_cam_people_count=zone_1_cam_people_count,
+            zone_1_validation_score=zone_1_validation_score,
+            zone_2_cam_people_count=zone_2_cam_people_count,
+            zone_2_validation_score=zone_2_validation_score,
             timestamp=payload.timestamp,
         )
+
+        result["zone_data"] = {
+            "zone-1": {
+                "cam_people_count": zone_1_cam_people_count,
+                "validation_score": zone_1_validation_score,
+            },
+            "zone-2": {
+                "cam_people_count": zone_2_cam_people_count,
+                "validation_score": zone_2_validation_score,
+            },
+        }
+        result["annotated_frames"] = payload_dict.get("annotated_frames", {})
+        return result
 
     def iot_result_to_intelligence_output(self, payload: PredictRequest, result: Dict[str, object]) -> IntelligenceOutput:
         """Bridge IoT-native result into dashboard's historical output contract."""
         features = result["features"]
-        avg_density = float(features["avg_density"])
+        avg_density = float(features["avg_zone_risk"])
         system_status = str(result["system_status"])
         decision = self._decision_from_status(system_status)
 
+        payload_dict = payload.dict()
+        zone_1 = payload_dict.get("zone-1") or payload_dict.get("zone_1") or {}
+        zone_2 = payload_dict.get("zone-2") or payload_dict.get("zone_2") or {}
+        camera_people_count = float(zone_1.get("cam_people_count", 0) + zone_2.get("cam_people_count", 0)) / 2.0
+        sensor_people_count = float(zone_1.get("validation_score", 0.0) + zone_2.get("validation_score", 0.0)) / 2.0
+
         return IntelligenceOutput(
-            timestamp=payload.timestamp,
+            timestamp=coerce_timestamp(payload.timestamp),
             zone_id="MULTI_ZONE",
             fused_crowd_count=avg_density,
             crowd_density=self._to_density_label(avg_density),
@@ -127,6 +159,6 @@ class MLService:
             recommended_action=str(decision["recommended_action"]),
             directional_guidance=str(decision["directional_guidance"]),
             explanation_text=str(result["reason"]),
-            camera_people_count=float(payload.z1_cam_count),
-            sensor_people_count=avg_density,
+            camera_people_count=camera_people_count,
+            sensor_people_count=sensor_people_count,
         )

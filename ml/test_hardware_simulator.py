@@ -1,24 +1,21 @@
 #!/usr/bin/env python3
 """
-Hardware Simulator for SENTINEL Dashboard Testing
-
-This script simulates ESP32 sensor data and sends it to the ML service,
-allowing you to visualize real-time dashboard behavior without physical hardware.
+Hardware Simulator for SENTINEL super-node architecture.
 
 Scenarios:
-1. NORMAL - Low density, all zones safe
-2. GRADUAL_INCREASE - Slowly increasing crowd
-3. CRITICAL_Z2 - Zone 2 goes critical
-4. CRITICAL_Z3 - Zone 3 goes critical  
+1. NORMAL - Low activity in both zones
+2. GRADUAL_INCREASE - Both zones gradually increase
+3. CRITICAL_ZONE_1 - Zone 1 goes critical
+4. CRITICAL_ZONE_2 - Zone 2 goes critical
 5. MULTI_ZONE_CRITICAL - Both zones critical
-6. WAVE_PATTERN - Oscillating crowd density
+6. WAVE_PATTERN - Oscillating crowd pattern
 7. RANDOM - Randomized realistic data
-8. CROWD_FLOW - Simulate crowd moving Z1->Z2->Z3
+8. CROWD_FLOW - Directional flow from zone-1 to zone-2
 
 Usage:
-    python test_hardware_simulator.py                    # Interactive mode
-    python test_hardware_simulator.py --scenario=8       # Run specific scenario
-    python test_hardware_simulator.py --scenario=7 --duration=60  # Random for 60s
+    python test_hardware_simulator.py
+    python test_hardware_simulator.py --scenario=8
+    python test_hardware_simulator.py --scenario=7 --duration=60
 """
 
 import argparse
@@ -27,24 +24,22 @@ import math
 import random
 import sys
 import time
-from datetime import datetime, timezone
-from typing import Callable, Dict, Any
+from datetime import datetime
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import cv2
 import numpy as np
 import requests
 
-# Configuration
 ML_SERVICE_URL = "http://localhost:8000"
 PREDICT_ENDPOINT = f"{ML_SERVICE_URL}/predict"
-CAMERA_TELEMETRY_ENDPOINT = f"{ML_SERVICE_URL}/api/v1/telemetry/camera"
-DEFAULT_INTERVAL = 2.0  # seconds between readings
+DEFAULT_INTERVAL = 2.0
 
 
 def generate_synthetic_frame(people_count: int) -> str:
     """Generate a synthetic 320x240 frame with people count drawn on it."""
     frame = np.zeros((240, 320, 3), dtype=np.uint8)
-    frame[:] = (30, 30, 50)  # dark background
+    frame[:] = (30, 30, 50)
     cv2.putText(frame, "SIMULATED", (80, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (100, 100, 255), 2)
     cv2.putText(frame, f"People: {people_count}", (100, 140), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 100), 2)
     _, buffer = cv2.imencode(".jpg", frame)
@@ -52,97 +47,92 @@ def generate_synthetic_frame(people_count: int) -> str:
 
 
 class SensorSimulator:
-    """Simulates ESP32 sensor readings for testing."""
+    """Simulates two super-node zones and POSTs payloads to /predict."""
 
     def __init__(self, interval: float = DEFAULT_INTERVAL):
         self.interval = interval
         self.iteration = 0
-        self.start_time = time.time()
 
-    def _send_reading(self, z1_cam: int, z2_density: float, z3_density: float) -> Dict[str, Any]:
-        """Send simulated reading to ML service."""
-        timestamp = datetime.now(timezone.utc).isoformat()
+    def _send_reading(
+        self,
+        z1_count: int,
+        z2_count: int,
+        z1_validation: float,
+        z2_validation: float,
+    ) -> Dict[str, Any]:
         payload = {
-            "z1_cam_count": z1_cam,
-            "z2_density_score": z2_density,
-            "z3_density_score": z3_density,
-            "timestamp": timestamp,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "zone-1": {
+                "cam_people_count": z1_count,
+                "cam_confidence": 0.82,
+                "validation_score": z1_validation,
+            },
+            "zone-2": {
+                "cam_people_count": z2_count,
+                "cam_confidence": 0.79,
+                "validation_score": z2_validation,
+            },
+            "annotated_frames": {
+                "zone-1": generate_synthetic_frame(z1_count),
+                "zone-2": generate_synthetic_frame(z2_count),
+            },
         }
 
         try:
             response = requests.post(PREDICT_ENDPOINT, json=payload, timeout=5)
             response.raise_for_status()
-            self._send_camera_telemetry(z1_cam, timestamp)
             return response.json()
         except requests.exceptions.ConnectionError:
             print(f"\nERROR: Cannot connect to ML service at {ML_SERVICE_URL}")
-            print("   Make sure the ML service is running: cd ml && python main.py")
+            print("Make sure the ML service is running: cd ml && python main.py")
             return {}
         except Exception as e:
             print(f"\nERROR: Error sending data: {e}")
             return {}
 
-    def _send_camera_telemetry(self, people_count: int, timestamp: str) -> None:
-        """Send a synthetic frame to exercise the camera telemetry path."""
-        synthetic_frame = generate_synthetic_frame(people_count)
-        try:
-            response = requests.post(
-                CAMERA_TELEMETRY_ENDPOINT,
-                json={
-                    "frame": synthetic_frame,
-                    "zone_id": "zone-1",
-                    "timestamp": timestamp,
-                },
-                timeout=5,
-            )
-            response.raise_for_status()
-        except Exception as e:
-            print(f"WARNING: Camera telemetry post failed: {e}")
-
-    def _print_status(self, data: Dict[str, Any], z1: int, z2: float, z3: float):
-        """Pretty print the current status."""
+    def _print_status(
+        self,
+        data: Dict[str, Any],
+        z1_count: int,
+        z2_count: int,
+        z1_validation: float,
+        z2_validation: float,
+    ) -> None:
         if not data:
             return
 
         risk = data.get("risk_score", 0)
         status = data.get("system_status", "UNKNOWN")
         zones = data.get("zone_status", {})
-        hw = data.get("hardware_commands", {})
         trend = data.get("trend_prediction", {})
 
-        # Status colors
         status_icon = {"SAFE": "[GREEN]", "MODERATE": "[YELLOW]", "CRITICAL": "[RED]"}.get(status, "[OFF]")
-        led_icon = {"green": "[GREEN]", "yellow": "[YELLOW]", "red": "[RED]"}.get
 
-        print(f"\n{'='*60}")
-        print(f"⏱️  Time: {datetime.now().strftime('%H:%M:%S')} | Iteration: {self.iteration}")
-        print(f"{'='*60}")
-        print(f"\n INPUT DATA:")
-        print(f"   Zone 1 (Camera):     {z1} people")
-        print(f"   Zone 2 (PIR+Ultra):  {z2:.1f}% density")
-        print(f"   Zone 3 (PIR+Ultra):  {z3:.1f}% density")
-        print(f"\n RISK ASSESSMENT:")
-        print(f"   Risk Score:    {risk:.1f}/100 {status_icon} {status}")
-        print(f"   Zone 1 Status: {zones.get('z1', 'N/A')}")
-        print(f"   Zone 2 Status: {zones.get('z2', 'N/A')}")
-        print(f"   Zone 3 Status: {zones.get('z3', 'N/A')}")
-        print(f"\n HARDWARE COMMANDS:")
-        print(f"   Zone 2 LED:    {led_icon(hw.get('z2_led', ''), '[OFF]')} {hw.get('z2_led', 'N/A')}")
-        print(f"   Zone 3 LED:    {led_icon(hw.get('z3_led', ''), '[OFF]')} {hw.get('z3_led', 'N/A')}")
-        print(f"   Zone 2 Buzzer: {'ON ON' if hw.get('z2_buzzer') else 'OFF OFF'}")
-        print(f"   Zone 3 Buzzer: {'ON ON' if hw.get('z3_buzzer') else 'OFF OFF'}")
-        print(f"\n TREND PREDICTION:")
-        print(f"   Trend:      {trend.get('trend', 'N/A')}")
-        print(f"   Prediction: {trend.get('prediction', 'N/A')}")
-        print(f"   Predicted:  {trend.get('predicted_density', 0):.1f}%")
-        print(f"   Confidence: {trend.get('confidence', 0)*100:.0f}%")
-        print(f"\n REASON: {data.get('reason', 'N/A')}")
+        print(f"\n{'=' * 60}")
+        print(f"Time: {datetime.now().strftime('%H:%M:%S')} | Iteration: {self.iteration}")
+        print(f"{'=' * 60}")
+        print("\nINPUT DATA:")
+        print(f"  zone-1 cam_people_count: {z1_count}")
+        print(f"  zone-1 validation_score: {z1_validation:.1f}")
+        print(f"  zone-2 cam_people_count: {z2_count}")
+        print(f"  zone-2 validation_score: {z2_validation:.1f}")
 
-    def run_scenario(self, generator: Callable[[], tuple], duration: int = 30):
-        """Run a scenario using the provided data generator."""
-        print(f"\n Starting simulation for {duration} seconds...")
-        print(f"   Interval: {self.interval}s between readings")
-        print(f"   Press Ctrl+C to stop\n")
+        print("\nRISK ASSESSMENT:")
+        print(f"  Risk Score: {risk:.1f}/100 {status_icon} {status}")
+        print(f"  zone-1 status: {zones.get('zone-1', 'N/A')}")
+        print(f"  zone-2 status: {zones.get('zone-2', 'N/A')}")
+
+        print("\nTREND PREDICTION:")
+        print(f"  Trend: {trend.get('trend', 'N/A')}")
+        print(f"  Prediction: {trend.get('prediction', 'N/A')}")
+        print(f"  Predicted density: {trend.get('predicted_density', 0):.1f}")
+        print(f"  Confidence: {trend.get('confidence', 0) * 100:.0f}%")
+        print(f"\nREASON: {data.get('reason', 'N/A')}")
+
+    def run_scenario(self, generator: Callable[[], Tuple[int, int, float, float]], duration: int = 30) -> None:
+        print(f"\nStarting simulation for {duration} seconds...")
+        print(f"Interval: {self.interval}s between readings")
+        print("Press Ctrl+C to stop\n")
 
         end_time = time.time() + duration
         self.iteration = 0
@@ -150,123 +140,109 @@ class SensorSimulator:
         try:
             while time.time() < end_time:
                 self.iteration += 1
-                z1, z2, z3 = generator()
-                result = self._send_reading(z1, z2, z3)
-                self._print_status(result, z1, z2, z3)
+                z1_count, z2_count, z1_validation, z2_validation = generator()
+                result = self._send_reading(z1_count, z2_count, z1_validation, z2_validation)
+                self._print_status(result, z1_count, z2_count, z1_validation, z2_validation)
                 time.sleep(self.interval)
         except KeyboardInterrupt:
-            print("\n\n⏹️  Simulation stopped by user")
+            print("\nSimulation stopped by user")
 
-    # ─────────────────────────────────────────────────────────────
-    # SCENARIO GENERATORS
-    # ─────────────────────────────────────────────────────────────
-
-    def scenario_normal(self) -> tuple:
-        """Scenario 1: Normal conditions - all zones safe."""
+    def scenario_normal(self) -> Tuple[int, int, float, float]:
         return (
-            random.randint(0, 2),         # z1_cam
-            random.uniform(10, 30),       # z2_density
-            random.uniform(10, 30),       # z3_density
+            random.randint(0, 2),
+            random.randint(0, 2),
+            random.uniform(8, 25),
+            random.uniform(8, 25),
         )
 
-    def scenario_gradual_increase(self) -> tuple:
-        """Scenario 2: Gradually increasing crowd density."""
-        progress = min(self.iteration / 15, 1.0)  # Full in 15 iterations
-        base_z2 = 20 + (progress * 70)  # 20 -> 90
-        base_z3 = 15 + (progress * 60)  # 15 -> 75
+    def scenario_gradual_increase(self) -> Tuple[int, int, float, float]:
+        progress = min(self.iteration / 15, 1.0)
+        z1_count = int(1 + progress * 10)
+        z2_count = int(1 + progress * 8)
+        z1_validation = min(100.0, 20.0 + (progress * 70.0) + random.uniform(-4, 4))
+        z2_validation = min(100.0, 18.0 + (progress * 65.0) + random.uniform(-4, 4))
+        return z1_count, z2_count, z1_validation, z2_validation
+
+    def scenario_critical_zone_1(self) -> Tuple[int, int, float, float]:
         return (
-            int(1 + progress * 6),                      # z1_cam: 1 -> 7
-            min(100, base_z2 + random.uniform(-5, 5)),  # z2
-            min(100, base_z3 + random.uniform(-5, 5)),  # z3
+            random.randint(10, 18),
+            random.randint(1, 4),
+            random.uniform(75, 95),
+            random.uniform(15, 35),
         )
 
-    def scenario_critical_z2(self) -> tuple:
-        """Scenario 3: Zone 2 goes critical while Zone 3 stays normal."""
+    def scenario_critical_zone_2(self) -> Tuple[int, int, float, float]:
         return (
-            random.randint(2, 4),          # z1_cam
-            random.uniform(75, 95),        # z2 critical
-            random.uniform(20, 35),        # z3 safe
+            random.randint(1, 4),
+            random.randint(10, 18),
+            random.uniform(15, 35),
+            random.uniform(75, 95),
         )
 
-    def scenario_critical_z3(self) -> tuple:
-        """Scenario 4: Zone 3 goes critical while Zone 2 stays normal."""
+    def scenario_multi_critical(self) -> Tuple[int, int, float, float]:
         return (
-            random.randint(2, 4),          # z1_cam
-            random.uniform(20, 35),        # z2 safe
-            random.uniform(75, 95),        # z3 critical
+            random.randint(12, 20),
+            random.randint(12, 20),
+            random.uniform(80, 100),
+            random.uniform(80, 100),
         )
 
-    def scenario_multi_critical(self) -> tuple:
-        """Scenario 5: Both zones go critical - emergency."""
-        return (
-            random.randint(6, 10),         # z1_cam high
-            random.uniform(80, 100),       # z2 critical
-            random.uniform(80, 100),       # z3 critical
-        )
-
-    def scenario_wave(self) -> tuple:
-        """Scenario 6: Wave pattern - oscillating density."""
+    def scenario_wave(self) -> Tuple[int, int, float, float]:
         t = self.iteration * 0.5
-        wave = (math.sin(t) + 1) / 2  # 0 to 1
-        z2_base = 30 + wave * 50      # 30 to 80
-        z3_base = 40 + math.sin(t + 1) * 25  # 15 to 65
-        return (
-            int(2 + wave * 4),
-            z2_base + random.uniform(-5, 5),
-            z3_base + random.uniform(-5, 5),
-        )
+        wave_1 = (math.sin(t) + 1) / 2
+        wave_2 = (math.sin(t + 1.2) + 1) / 2
 
-    def scenario_random(self) -> tuple:
-        """Scenario 7: Random realistic data."""
+        z1_count = int(2 + (wave_1 * 10))
+        z2_count = int(2 + (wave_2 * 10))
+        z1_validation = 20.0 + (wave_1 * 70.0) + random.uniform(-3, 3)
+        z2_validation = 20.0 + (wave_2 * 70.0) + random.uniform(-3, 3)
+        return z1_count, z2_count, max(0.0, min(100.0, z1_validation)), max(0.0, min(100.0, z2_validation))
+
+    def scenario_random(self) -> Tuple[int, int, float, float]:
         return (
-            random.randint(0, 8),
+            random.randint(0, 20),
+            random.randint(0, 20),
             random.uniform(0, 100),
             random.uniform(0, 100),
         )
 
-    def scenario_crowd_flow(self) -> tuple:
-        """Scenario 8: Crowd Flow - Directional movement from Zone 1 to Zone 3."""
-        # Simulated directional flow where a crowd enters Z1 -> Z2 -> Z3 -> Exits
-        t = self.iteration % 40  # 40 iterations per cycle
-        
-        # Base ambient
-        z1 = 1
-        z2 = 10.0
-        z3 = 10.0
-        
-        # Zone 1 (Camera) spikes first as people enter
-        if 0 <= t < 15:
-            z1 = int(1 + math.sin((t / 15.0) * math.pi) * 15)
-        
-        # Zone 2 (Density) receives them delayed
-        if 5 <= t < 25:
-            z2 = 10.0 + math.sin(((t - 5) / 20.0) * math.pi) * 75.0
-            
-        # Zone 3 (Density) receives them last before they exit
-        if 15 <= t < 35:
-            z3 = 10.0 + math.sin(((t - 15) / 20.0) * math.pi) * 80.0
-            
+    def scenario_crowd_flow(self) -> Tuple[int, int, float, float]:
+        t = self.iteration % 40
+
+        z1_count = 1
+        z2_count = 1
+        z1_validation = 10.0
+        z2_validation = 10.0
+
+        if 0 <= t < 18:
+            z1_count = int(1 + math.sin((t / 18.0) * math.pi) * 16)
+            z1_validation = 15.0 + math.sin((t / 18.0) * math.pi) * 75.0
+
+        if 8 <= t < 30:
+            z2_count = int(1 + math.sin(((t - 8) / 22.0) * math.pi) * 16)
+            z2_validation = 15.0 + math.sin(((t - 8) / 22.0) * math.pi) * 75.0
+
         return (
-            max(0, z1 + random.randint(-1, 1)),
-            max(0.0, min(100.0, z2 + random.uniform(-3, 3))),
-            max(0.0, min(100.0, z3 + random.uniform(-3, 3))),
+            max(0, z1_count + random.randint(-1, 1)),
+            max(0, z2_count + random.randint(-1, 1)),
+            max(0.0, min(100.0, z1_validation + random.uniform(-3, 3))),
+            max(0.0, min(100.0, z2_validation + random.uniform(-3, 3))),
         )
 
 
-def interactive_menu():
-    """Display interactive scenario selection menu."""
-    print("\n" + "="*60)
-    print(" SENTINEL HARDWARE SIMULATOR")
-    print("="*60)
+def interactive_menu() -> Tuple[Optional[int], int]:
+    print("\n" + "=" * 60)
+    print("SENTINEL HARDWARE SIMULATOR")
+    print("=" * 60)
     print("\nSelect a test scenario:\n")
-    print("  1. NORMAL          - Low density, all zones safe")
-    print("  2. GRADUAL_INCREASE- Slowly increasing crowd")
-    print("  3. CRITICAL_Z2     - Zone 2 goes critical")
-    print("  4. CRITICAL_Z3     - Zone 3 goes critical")
-    print("  5. MULTI_CRITICAL  - Both zones critical (emergency)")
-    print("  6. WAVE_PATTERN    - Oscillating crowd density")
-    print("  7. RANDOM          - Randomized realistic data")
-    print("  8. CROWD_FLOW      - Simulate crowd moving Z1->Z2->Z3")
+    print("  1. NORMAL             - Low activity in both zones")
+    print("  2. GRADUAL_INCREASE   - Gradually increasing crowd")
+    print("  3. CRITICAL_ZONE_1    - Zone 1 goes critical")
+    print("  4. CRITICAL_ZONE_2    - Zone 2 goes critical")
+    print("  5. MULTI_CRITICAL     - Both zones critical")
+    print("  6. WAVE_PATTERN       - Oscillating crowd pattern")
+    print("  7. RANDOM             - Randomized realistic data")
+    print("  8. CROWD_FLOW         - Simulate crowd moving zone-1 -> zone-2")
     print("  0. EXIT\n")
 
     while True:
@@ -286,7 +262,7 @@ def interactive_menu():
             return None, 0
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="SENTINEL Hardware Simulator")
     parser.add_argument("--scenario", type=int, help="Scenario number (1-8)")
     parser.add_argument("--duration", type=int, default=30, help="Duration in seconds")
@@ -298,8 +274,8 @@ def main():
     scenarios = {
         1: ("NORMAL", simulator.scenario_normal),
         2: ("GRADUAL_INCREASE", simulator.scenario_gradual_increase),
-        3: ("CRITICAL_Z2", simulator.scenario_critical_z2),
-        4: ("CRITICAL_Z3", simulator.scenario_critical_z3),
+        3: ("CRITICAL_ZONE_1", simulator.scenario_critical_zone_1),
+        4: ("CRITICAL_ZONE_2", simulator.scenario_critical_zone_2),
         5: ("MULTI_CRITICAL", simulator.scenario_multi_critical),
         6: ("WAVE_PATTERN", simulator.scenario_wave),
         7: ("RANDOM", simulator.scenario_random),
@@ -311,17 +287,18 @@ def main():
             print(f"ERROR: Invalid scenario: {args.scenario}")
             sys.exit(1)
         name, generator = scenarios[args.scenario]
-        print(f"\n Running scenario: {name}")
+        print(f"\nRunning scenario: {name}")
         simulator.run_scenario(generator, args.duration)
-    else:
-        while True:
-            choice, duration = interactive_menu()
-            if choice is None:
-                print("\n Goodbye!")
-                break
-            name, generator = scenarios[choice]
-            print(f"\n Running scenario: {name}")
-            simulator.run_scenario(generator, duration)
+        return
+
+    while True:
+        choice, duration = interactive_menu()
+        if choice is None:
+            print("\nGoodbye!")
+            break
+        name, generator = scenarios[choice]
+        print(f"\nRunning scenario: {name}")
+        simulator.run_scenario(generator, duration)
 
 
 if __name__ == "__main__":
