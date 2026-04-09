@@ -253,7 +253,6 @@ input {
 }
 
 .stats-heading {
-  font-family: var(--font-heading);
   font-size: 62px;
   font-weight: 700;
   color: #f8fafc;
@@ -261,7 +260,6 @@ input {
 }
 
 .use-cases-heading {
-  font-family: var(--font-heading);
   font-weight: 700;
 }
 
