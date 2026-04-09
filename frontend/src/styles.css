@@ -105,9 +105,10 @@
 }
 
 :root {
-  --font-heading: "Satoshi", "Plus Jakarta Sans", sans-serif;
-  --font-body: "Satoshi", "Plus Jakarta Sans", sans-serif;
+  --font-heading: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Plus Jakarta Sans", sans-serif;
   --font-ui: "Performa", "Plus Jakarta Sans", sans-serif;
+  --font-dashboard: "Satoshi", "Plus Jakarta Sans", sans-serif;
   --color-bg: #0b0a14;
   --color-card: rgba(26, 25, 38, 0.8);
   --color-critical: #ff4d4d;

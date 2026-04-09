@@ -17,6 +17,20 @@ const HEIGHT = 320;
 
 export const RiskTimelineChart: React.FC<Props> = ({ data, loading }) => {
   const points = data ?? [];
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [chartHeight, setChartHeight] = React.useState(200);
+
+  React.useEffect(() => {
+    if (!containerRef.current) return;
+    setChartHeight(Math.max(100, containerRef.current.offsetHeight - 140));
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setChartHeight(Math.max(100, entry.contentRect.height - 140)); // Account for header and footer spacing
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const domain = useMemo(() => {
     if (!points.length) return { min: 0, max: 100 };
@@ -28,18 +42,19 @@ export const RiskTimelineChart: React.FC<Props> = ({ data, loading }) => {
 
   if (loading) {
     return (
-      <div className="glass-card" style={{ padding: 24 }}>
-        <Skeleton height={HEIGHT} />
+      <div className="glass-card" style={{ padding: 24, height: "100%", display: "flex", flexDirection: "column" }}>
+        <Skeleton height="100%" />
       </div>
     );
   }
 
   if (!points.length) {
     return (
-      <div className="glass-card" style={{ padding: 24, color: "#f8fafc" }}>Timeline data unavailable</div>
+      <div className="glass-card" style={{ padding: 24, color: "#f8fafc", height: "100%" }}>Timeline data unavailable</div>
     );
   }
 
+  const HEIGHT = chartHeight;
   const width = Math.max(800, points.length * 40);
   const scaleX = (idx: number) => (idx / Math.max(points.length - 1, 1)) * width;
   const scaleY = (value: number) => {
@@ -51,9 +66,11 @@ export const RiskTimelineChart: React.FC<Props> = ({ data, loading }) => {
     .map((p, idx) => `${idx === 0 ? "M" : "L"}${scaleX(idx)},${scaleY(p.riskScore)}`)
     .join(" ");
 
+  const polylineStr = points.map((p, idx) => `${scaleX(idx)},${scaleY(p.riskScore)}`).join(" ") + ` ${scaleX(points.length - 1)},${HEIGHT} 0,${HEIGHT}`;
+
   return (
-    <div className="glass-card" style={{ padding: 24 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+    <div ref={containerRef} className="glass-card" style={{ padding: 20, height: "100%", width: "100%", display: "flex", flexDirection: "column", minHeight: 300 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, flexShrink: 0 }}>
         <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: "12px", textTransform: "uppercase", letterSpacing: "2px" }}>RISK TIMELINE</div>
         <div style={{ display: "flex", gap: 16, fontSize: 14, color: "rgba(248, 250, 252, 0.7)" }}>
           <Legend color={levelColor.LOW} label="Low" />
@@ -61,7 +78,7 @@ export const RiskTimelineChart: React.FC<Props> = ({ data, loading }) => {
           <Legend color={levelColor.HIGH} label="High" />
         </div>
       </div>
-      <div style={{ overflowX: "auto", paddingBottom: 12, scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.1) transparent" }}>
+      <div style={{ flex: 1, overflowX: "auto", overflowY: "hidden", scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.1) transparent", position: "relative" }}>
         <svg width={width} height={HEIGHT} style={{ display: "block", minWidth: "100%" }}>
           <defs>
             <filter id="glow-low" x="-50%" y="-50%" width="200%" height="200%">
@@ -78,11 +95,12 @@ export const RiskTimelineChart: React.FC<Props> = ({ data, loading }) => {
             </filter>
           </defs>
           <polyline
-            points={points.map((p, idx) => `${scaleX(idx)},${scaleY(p.riskScore)}`).join(" ") + ` ${scaleX(points.length - 1)},${HEIGHT} 0,${HEIGHT}`}
+            points={polylineStr}
             fill="color-mix(in srgb, var(--color-info) 8%, transparent)"
             stroke="none"
+            style={{ transition: "points 0.5s ease-in-out" }}
           />
-          <path d={path} fill="none" stroke="var(--color-info)" strokeWidth={2} strokeLinejoin="round" />
+          <path d={path} fill="none" stroke="var(--color-info)" strokeWidth={2} strokeLinejoin="round" style={{ transition: "d 0.5s ease-in-out" }} />
           {points.map((p, idx) => {
             const color = levelColor[p.densityLevel];
             const filterId = p.densityLevel === "LOW" ? "glow-low" : p.densityLevel === "MEDIUM" ? "glow-medium" : "glow-high";
@@ -94,7 +112,7 @@ export const RiskTimelineChart: React.FC<Props> = ({ data, loading }) => {
                 r={6}
                 fill={color}
                 filter={`url(#${filterId})`}
-                style={{ transition: "all 0.3s ease" }}
+                style={{ transition: "cx 0.5s ease-in-out, cy 0.5s ease-in-out, fill 0.3s ease-in-out" }}
               >
                 <title>
                   {new Date(p.timestamp).toLocaleString()}\nRisk: {p.riskScore}\nDensity: {p.densityLevel}
@@ -104,14 +122,12 @@ export const RiskTimelineChart: React.FC<Props> = ({ data, loading }) => {
           })}
         </svg>
       </div>
-      <div style={{ marginTop: 20, padding: 16, background: "rgba(56, 189, 248, 0.05)", borderRadius: 12, border: "1px solid rgba(56, 189, 248, 0.15)" }}>
-        <div style={{ color: "rgba(56, 189, 248, 0.8)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 6 }}>
-          HOW TO INTERPRET
+      <div style={{ marginTop: 16, padding: 12, background: "rgba(56, 189, 248, 0.05)", borderRadius: 10, border: "1px solid rgba(56, 189, 248, 0.15)", flexShrink: 0 }}>
+        <div style={{ color: "rgba(56, 189, 248, 0.8)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>
+          INTERPRETATION
         </div>
-        <div style={{ color: "rgba(248, 250, 252, 0.85)", fontSize: 14, lineHeight: 1.5 }}>
-          The line represents the continuous <strong>Risk Score</strong> (0-100) generated by the fusion engine over time. 
-          Each point indicates a distinct snapshot, with the <strong>node color</strong> reflecting the localized Density Risk Level 
-          (Green = Safe, Yellow = Moderate, Red = Critical). Unusually steep slopes or sustained red zones warrant operational intervention.
+        <div style={{ color: "rgba(248, 250, 252, 0.85)", fontSize: 13, lineHeight: 1.4 }}>
+          Blue line measures the real-time Fusion Risk Score (0-100). Dots highlight density states (Safe, Moderate, Critical). High crests matching red dots require rapid diversion.
         </div>
       </div>
     </div>

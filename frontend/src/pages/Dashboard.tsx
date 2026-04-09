@@ -83,7 +83,7 @@ const Dashboard: React.FC = () => {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", fontFamily: "var(--font-dashboard)", color: "#f8fafc" }}>
       <div
         style={{
           position: "sticky",
@@ -253,9 +253,9 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* Tab Panels */}
-      <div style={{ flex: 1, padding: 24, overflow: "auto" }}>
+      <div style={{ flex: 1, padding: 24, overflow: "auto", display: "flex", flexDirection: "column" }}>
         {activeTab === "OVERVIEW" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
             <AnimatePresence>
               {showCriticalBanner && (
                 <motion.div
@@ -266,9 +266,10 @@ const Dashboard: React.FC = () => {
                   style={{ overflow: "hidden" }}
                 >
                   <div className="glass-card" style={{
-                    background: "rgba(220, 38, 38, 0.15)",
-                    border: "1px solid rgba(220, 38, 38, 0.4)",
-                    color: "#fecaca",
+                    background: "rgba(220, 38, 38, 0.4)",
+                    border: "1px solid rgba(255, 60, 60, 0.6)",
+                    boxShadow: "none",
+                    color: "#ffffff",
                     padding: "16px 20px",
                     display: "flex",
                     justifyContent: "space-between",
@@ -307,52 +308,80 @@ const Dashboard: React.FC = () => {
             </AnimatePresence>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ 
+                color: "#f8fafc", 
+                fontSize: 16, 
+                textTransform: "uppercase", 
+                letterSpacing: "2px", 
+                fontWeight: 800, 
+                padding: "8px 16px", 
+                marginTop: 8,
+                background: "linear-gradient(90deg, rgba(255,255,255,0.06) 0%, transparent 100%)",
+                borderLeft: "3px solid var(--color-info)",
+                borderRadius: "0 8px 8px 0"
+              }}>
+                Live Camera Feed
+              </div>
               <CameraFeedPanel
                 annotatedFrames={annotated_frames}
                 zoneData={zone_data}
                 zoneStatus={zone_status}
               />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "start" }}>
-              <ZoneMapPanel zoneStatus={zone_status} zoneData={zone_data} />
 
-              <CombinedRiskDensityCard
-                score={Number.isFinite(risk_score) ? risk_score : overview?.riskScore ?? null}
-                level={riskLevelFromSystem}
-                density={overview?.densityLevel ?? null}
-                hardware={hardware}
-                loading={isLoading}
-              />
+            <div style={{ margin: "16px 0", height: 1, background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%)" }} />
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ 
+                color: "#f8fafc", 
+                fontSize: 16, 
+                textTransform: "uppercase", 
+                letterSpacing: "2px", 
+                fontWeight: 800, 
+                padding: "8px 16px",
+                background: "linear-gradient(90deg, rgba(255,255,255,0.06) 0%, transparent 100%)",
+                borderLeft: "3px solid var(--color-warning)",
+                borderRadius: "0 8px 8px 0"
+              }}>
+                Zone Analysis & Risk Density
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "stretch" }}>
+                <ZoneMapPanel zoneStatus={zone_status} zoneData={zone_data} />
+
+                <CombinedRiskDensityCard
+                  score={Number.isFinite(risk_score) ? risk_score : overview?.riskScore ?? null}
+                  level={riskLevelFromSystem}
+                  density={overview?.densityLevel ?? null}
+                  hardware={hardware}
+                  loading={isLoading}
+                />
+              </div>
             </div>
           </div>
         )}
 
         {activeTab === "ANALYTICS" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {/* ROW 1 - Full width */}
-            <RiskTimelineChart data={timeline} loading={isLoading} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, height: "100%", flex: 1 }}>
+            <div style={{ flex: "0 1 50%", minHeight: 300, display: "flex" }}>
+              <RiskTimelineChart data={timeline} loading={isLoading} />
+            </div>
 
-            {/* ROW 2 - Two columns */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
-              <div style={{ minWidth: 0 }}>
-                <FlowChart data={flow} loading={isLoading} />
-              </div>
+            <div style={{ flex: "0 1 50%", minHeight: 300, display: "flex" }}>
+              <FlowChart data={flow} loading={isLoading} />
             </div>
           </div>
         )}
 
         {activeTab === "OPERATIONS" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "stretch" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "stretch", height: "100%", flex: 1 }}>
             {/* LEFT COLUMN */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, height: "100%", minHeight: 0 }}>
               <MLInsightsPanel hardware={hardware} loading={isLoading} />
             </div>
 
             {/* RIGHT COLUMN */}
-            <div style={{ position: "relative", minHeight: 0 }}>
-              <div style={{ position: "absolute", inset: 0 }}>
-                <AlertsPanel alerts={alerts} loading={isLoading} fillHeight />
-              </div>
+            <div style={{ height: "100%", minHeight: 0 }}>
+              <AlertsPanel alerts={alerts} loading={isLoading} fillHeight />
             </div>
           </div>
         )}
