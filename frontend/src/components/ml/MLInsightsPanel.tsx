@@ -79,7 +79,7 @@ export const MLInsightsPanel: React.FC<Props> = ({ hardware, loading }) => {
           </div>
         </div>
 
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: "auto" }}>
           <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid rgba(255,255,255,0.03)" }}>
             <div style={{ color: "rgba(248, 250, 252, 0.6)", fontSize: 12, fontWeight: 600, letterSpacing: "0.5px" }}>FORECAST HORIZON</div>
             <div style={{ color: "rgba(248, 250, 252, 0.55)", fontSize: 16, fontWeight: 800, textTransform: "uppercase", letterSpacing: "1px" }}>No Data</div>
@@ -170,7 +170,7 @@ export const MLInsightsPanel: React.FC<Props> = ({ hardware, loading }) => {
         </div>
       </div>
 
-      <div style={{ marginTop: 12 }}>
+      <div style={{ marginTop: "auto" }}>
         <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid rgba(255,255,255,0.03)" }}>
            <div style={{ color: "rgba(248, 250, 252, 0.6)", fontSize: 12, fontWeight: 600, letterSpacing: "0.5px" }}>FORECAST HORIZON</div>
            <div style={{ color: predictionColorMap[pred] ?? "rgba(248, 250, 252, 0.5)", fontSize: 16, fontWeight: 800, textTransform: "uppercase", letterSpacing: "1px" }}>{pred.replace("_", " ")}</div>

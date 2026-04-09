@@ -243,7 +243,7 @@ const AboutUs: React.FC = () => {
       filter: "blur(0px)",
       transition: {
         duration: 0.72,
-        ease: [0.22, 1, 0.36, 1],
+        ease: [0.22, 1, 0.36, 1] as const,
       },
     },
     exit: {
@@ -252,7 +252,7 @@ const AboutUs: React.FC = () => {
       filter: "blur(3px)",
       transition: {
         duration: 0.45,
-        ease: [0.55, 0, 1, 0.45],
+        ease: [0.55, 0, 1, 0.45] as const,
       },
     },
   };

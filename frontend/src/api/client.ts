@@ -85,4 +85,6 @@ api.interceptors.response.use(
   }
 );
 
+export const client = api;
+
 export default api;

@@ -190,6 +190,25 @@ const Dashboard: React.FC = () => {
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--color-safe)", boxShadow: "0 0 8px var(--color-safe)" }} />
               <span style={{ color: "rgba(248, 250, 252, 0.8)", fontSize: 14, fontWeight: 500 }}>{user?.email}</span>
             </div>
+
+            <Link
+              to="/analytics"
+              style={{
+                fontFamily: "var(--font-ui)",
+                padding: "10px 18px",
+                borderRadius: 9999,
+                background: "rgba(249, 115, 22, 0.12)",
+                border: "1px solid rgba(249, 115, 22, 0.35)",
+                color: "#fed7aa",
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: 14,
+                textDecoration: "none",
+                transition: "all 0.2s"
+              }}
+            >
+              Analytics
+            </Link>
             
             <button
               onClick={refresh}
@@ -363,12 +382,12 @@ const Dashboard: React.FC = () => {
           <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "stretch", height: tabViewportHeight, minHeight: 420, flexShrink: 0 }}>
               {/* LEFT COLUMN */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 12, height: "100%" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, height: "100%", minHeight: 0 }}>
                 <MLInsightsPanel hardware={hardware} loading={isLoading} />
               </div>
 
               {/* RIGHT COLUMN */}
-              <div style={{ height: "100%" }}>
+              <div style={{ height: "100%", minHeight: 0 }}>
                 <AlertsPanel alerts={alerts} loading={isLoading} fillHeight />
               </div>
             </div>

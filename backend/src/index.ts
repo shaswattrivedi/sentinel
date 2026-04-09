@@ -12,6 +12,7 @@ import { connectDb } from "./config/db.js";
 import { requestContext } from "./middleware/requestContext.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { router as apiRouter } from "./routes/index.js";
+import { startSnapshotScheduler } from "./services/snapshotService.js";
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use(errorHandler);
 
 const start = async () => {
   await connectDb();
+  startSnapshotScheduler();
   app.listen(env.port, () => {
     console.log(`SENTINEL API listening on port ${env.port}`);
   });

@@ -5,6 +5,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
+import Analytics from "@/pages/Analytics";
 import Signup from "@/pages/Signup";
 import Landing from "@/pages/Landing";
 import Aurora from "@/components/Aurora";
@@ -90,6 +91,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
                 <Route path="/" element={<Landing />} />
                 <Route element={<ProtectedRoute />}>
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/analytics" element={<Analytics />} />
                 </Route>
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />

@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { HttpError } from "../middleware/errorHandler.js";
 import type { RiskEvent } from "./riskService.js";
+import { incrementAlertCount } from "./snapshotService.js";
 
 export type AlertSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
@@ -40,6 +41,7 @@ export const alertService = {
       createdAt: new Date().toISOString(),
       source: event
     });
+    incrementAlertCount();
   },
 
   triggerPredictionAlert(prediction: { predictedCount: number; confidence: number; timeWindow: string }) {
@@ -56,5 +58,6 @@ export const alertService = {
       acknowledged: false,
       createdAt: new Date().toISOString()
     });
+    incrementAlertCount();
   }
 };
