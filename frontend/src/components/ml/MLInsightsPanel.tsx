@@ -7,6 +7,20 @@ type Props = {
   loading?: boolean;
 };
 
+const trendColorMap: Record<string, string> = {
+  INCREASING: "var(--color-critical)",
+  DECREASING: "var(--color-safe)",
+  STABLE: "var(--color-info)",
+  UNKNOWN: "rgba(248, 250, 252, 0.5)",
+};
+
+const predictionColorMap: Record<string, string> = {
+  LOW_TREND: "var(--color-safe)",
+  MODERATE_TREND: "var(--color-warning)",
+  HIGH_RISK: "var(--color-critical)",
+  NO_DATA: "rgba(248, 250, 252, 0.5)",
+};
+
 export const MLInsightsPanel: React.FC<Props> = ({ hardware, loading }) => {
   if (loading) {
     return (
@@ -27,14 +41,16 @@ export const MLInsightsPanel: React.FC<Props> = ({ hardware, loading }) => {
     );
   }
 
-  const trend = hardware.trend_prediction.trend;
-  const pred = hardware.trend_prediction.prediction;
-  const confidence = hardware.trend_prediction.confidence;
-  const density = Math.round(Math.max(0, Math.min(100, Number(hardware.trend_prediction.predicted_density) || 0)));
+  const trendObj = hardware.trend_prediction;
+  const trend = trendObj.trend;
+  const pred = trendObj.prediction;
+  const confidence = trendObj.confidence;
+  const density = Math.round(Math.max(0, Math.min(100, Number(trendObj.predicted_density) || 0)));
 
   const isCritical = pred === "HIGH_RISK";
   const isModerate = pred === "MODERATE_TREND";
   const color = isCritical ? "var(--color-critical)" : isModerate ? "var(--color-warning)" : "var(--color-safe)";
+  const trendColor = trendColorMap[trend] ?? "rgba(248, 250, 252, 0.5)";
 
   const getInsightText = () => {
     if (isCritical) {
@@ -60,7 +76,7 @@ export const MLInsightsPanel: React.FC<Props> = ({ hardware, loading }) => {
     <div className="glass-card" style={{ padding: 24, height: "100%", display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
         <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "2px" }}>
-          PREDICTIVE INSIGHTS
+          PREDICTIVE INSIGHTS & TRENDS
         </div>
         {typeof confidence === "number" && (
           <div style={{ textAlign: "right" }}>
@@ -68,6 +84,21 @@ export const MLInsightsPanel: React.FC<Props> = ({ hardware, loading }) => {
             <div style={{ color: "#f8fafc", fontWeight: 700, fontSize: 18 }}>{(confidence * 100).toFixed(0)}%</div>
           </div>
         )}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+        <div style={{ background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)" }}>
+          <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: 13, marginBottom: 8, textTransform: "uppercase", letterSpacing: "1px" }}>Trend</div>
+          <div style={{ color: trendColor, fontWeight: 800, fontSize: 24, textTransform: "uppercase" }}>
+            {trend}
+          </div>
+        </div>
+        <div style={{ background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)", textAlign: "right" }}>
+          <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: 13, marginBottom: 8, textTransform: "uppercase", letterSpacing: "1px" }}>Predicted Density</div>
+          <div style={{ color: predictionColorMap[pred] ?? "rgba(248, 250, 252, 0.5)", fontWeight: 800, fontSize: 24 }}>
+            {density.toFixed(0)}%
+          </div>
+        </div>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -90,8 +121,8 @@ export const MLInsightsPanel: React.FC<Props> = ({ hardware, loading }) => {
 
       <div style={{ marginTop: "auto", paddingTop: 20 }}>
         <div style={{ background: "rgba(0,0,0,0.15)", borderRadius: 10, padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-           <div style={{ color: "rgba(248, 250, 252, 0.6)", fontSize: 13, fontWeight: 600, letterSpacing: "0.5px" }}>PROJECTED PEAK DENSITY</div>
-           <div style={{ color: color, fontSize: 20, fontWeight: 800, textShadow: `0 0 10px ${color}60` }}>{density}%</div>
+           <div style={{ color: "rgba(248, 250, 252, 0.6)", fontSize: 13, fontWeight: 600, letterSpacing: "0.5px" }}>MODEL PREDICTION</div>
+           <div style={{ color: predictionColorMap[pred] ?? "rgba(248, 250, 252, 0.5)", fontSize: 18, fontWeight: 800, textTransform: "uppercase", letterSpacing: "1px", textShadow: `0 0 10px ${predictionColorMap[pred] ?? "transparent"}60` }}>{pred.replace("_", " ")}</div>
         </div>
       </div>
     </div>

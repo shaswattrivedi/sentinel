@@ -6,9 +6,7 @@ import { useMLDashboardData } from "../hooks/useMLDashboardData";
 import { FlowChart } from "@/components/ml/FlowChart";
 import { RiskTimelineChart } from "@/components/ml/RiskTimelineChart";
 import { AlertsPanel } from "@/components/ml/AlertsPanel";
-import { EvacuationDecisionPanel } from "@/components/ml/EvacuationDecisionPanel";
 import { MLInsightsPanel } from "@/components/ml/MLInsightsPanel";
-import { MLTrendPanel } from "@/components/ml/MLTrendPanel";
 import { CameraFeedPanel } from "@/components/ml/CameraFeedPanel";
 import { ZoneMapPanel } from "@/components/ml/ZoneMapPanel";
 import { CombinedRiskDensityCard } from "@/components/ml/CombinedRiskDensityCard";
@@ -86,49 +84,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <AnimatePresence>
-        {showCriticalBanner && (
-          <motion.div
-            initial={{ y: -80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -80, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            style={{
-              position: "sticky",
-              top: 0,
-              zIndex: 100,
-              width: "100%",
-              background: "linear-gradient(90deg, rgba(127,29,29,0.95), rgba(220,38,38,0.95))",
-              borderBottom: "1px solid rgba(254,202,202,0.35)",
-              boxShadow: "0 10px 32px rgba(127,29,29,0.35)",
-              color: "#fee2e2",
-              padding: "12px 20px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              fontWeight: 700,
-              letterSpacing: 0.2
-            }}
-          >
-            <span>CRITICAL ALERT — Immediate Action Required</span>
-            <button
-              onClick={() => setShowCriticalBanner(false)}
-              style={{
-                background: "rgba(0,0,0,0.2)",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.25)",
-                borderRadius: 8,
-                padding: "6px 10px",
-                cursor: "pointer",
-                fontWeight: 700
-              }}
-            >
-              Dismiss
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <div
         style={{
           position: "sticky",
@@ -301,49 +256,66 @@ const Dashboard: React.FC = () => {
       <div style={{ flex: 1, padding: 24, overflow: "auto" }}>
         {activeTab === "OVERVIEW" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div className="grid grid-cols-5" style={{ gap: 12 }}>
-              <div className="glass-card" style={{ padding: "10px 12px" }}>
-                <div style={{ color: "rgba(248,250,252,0.55)", fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2 }}>Risk Score</div>
-                <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 18 }}>{Math.round(risk_score)}</div>
-              </div>
-              <div className="glass-card" style={{ padding: "10px 12px" }}>
-                <div style={{ color: "rgba(248,250,252,0.55)", fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2 }}>System</div>
-                <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 18 }}>{system_status}</div>
-              </div>
-              <div className="glass-card" style={{ padding: "10px 12px" }}>
-                <div style={{ color: "rgba(248,250,252,0.55)", fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2 }}>Predicted Density</div>
-                <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 18 }}>
-                  {Math.round(hardware?.trend_prediction?.predicted_density ?? 0)}%
-                </div>
-              </div>
-              <div className="glass-card" style={{ padding: "10px 12px" }}>
-                <div style={{ color: "rgba(248,250,252,0.55)", fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2 }}>Zone 1</div>
-                <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 18 }}>
-                  {zone_data["zone-1"].cam_people_count} people
-                </div>
-              </div>
-              <div className="glass-card" style={{ padding: "10px 12px" }}>
-                <div style={{ color: "rgba(248,250,252,0.55)", fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2 }}>Zone 2</div>
-                <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 18 }}>
-                  {zone_data["zone-2"].cam_people_count} people
-                </div>
-              </div>
-            </div>
+            <AnimatePresence>
+              {showCriticalBanner && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <div className="glass-card" style={{
+                    background: "rgba(220, 38, 38, 0.15)",
+                    border: "1px solid rgba(220, 38, 38, 0.4)",
+                    color: "#fecaca",
+                    padding: "16px 20px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    fontWeight: 600,
+                    marginBottom: 12
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <span style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        background: "#ef4444",
+                        boxShadow: "0 0 12px #ef4444"
+                      }} />
+                      CRITICAL ALERT — Immediate Action Required
+                    </div>
+                    <button
+                      onClick={() => setShowCriticalBanner(false)}
+                      style={{
+                        background: "rgba(0,0,0,0.2)",
+                        color: "#fff",
+                        border: "1px solid rgba(255,255,255,0.15)",
+                        borderRadius: 8,
+                        padding: "6px 12px",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        fontSize: 13
+                      }}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1.25fr 1fr 1fr", gap: 12, alignItems: "start" }}>
-            <div style={{ gridColumn: "span 2" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <CameraFeedPanel
                 annotatedFrames={annotated_frames}
                 zoneData={zone_data}
                 zoneStatus={zone_status}
               />
             </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "start" }}>
+              <ZoneMapPanel zoneStatus={zone_status} zoneData={zone_data} />
 
-            <EvacuationDecisionPanel decision={decision} loading={isLoading} />
-
-            <ZoneMapPanel zoneStatus={zone_status} zoneData={zone_data} />
-
-            <div style={{ gridColumn: "span 2" }}>
               <CombinedRiskDensityCard
                 score={Number.isFinite(risk_score) ? risk_score : overview?.riskScore ?? null}
                 level={riskLevelFromSystem}
@@ -353,7 +325,6 @@ const Dashboard: React.FC = () => {
               />
             </div>
           </div>
-          </div>
         )}
 
         {activeTab === "ANALYTICS" && (
@@ -362,12 +333,9 @@ const Dashboard: React.FC = () => {
             <RiskTimelineChart data={timeline} loading={isLoading} />
 
             {/* ROW 2 - Two columns */}
-            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
               <div style={{ minWidth: 0 }}>
                 <FlowChart data={flow} loading={isLoading} />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <MLTrendPanel hardware={hardware} loading={isLoading} />
               </div>
             </div>
           </div>
@@ -377,78 +345,6 @@ const Dashboard: React.FC = () => {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "stretch" }}>
             {/* LEFT COLUMN */}
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div className="glass-card" style={{ padding: 16 }}>
-                <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "2px", marginBottom: 12 }}>
-                  ZONE HEALTH
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  {(["zone-1", "zone-2"] as const).map((zoneKey) => {
-                    const status = zone_status[zoneKey];
-                    const validation = Math.max(0, Math.min(100, Number(zone_data[zoneKey].validation_score) || 0));
-                    const hasFeed = !!annotated_frames[zoneKey];
-                    const statusColor =
-                      status === "CRITICAL" ? "var(--color-critical)" : status === "MODERATE" ? "var(--color-warning)" : "var(--color-safe)";
-
-                    return (
-                      <div
-                        key={zoneKey}
-                        style={{
-                          borderRadius: 12,
-                          background: "rgba(255,255,255,0.03)",
-                          border: "1px solid rgba(255,255,255,0.08)",
-                          padding: 12,
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 10,
-                        }}
-                      >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <div style={{ color: "#f8fafc", fontSize: 14, fontWeight: 800, letterSpacing: 0.4 }}>
-                            {zoneKey === "zone-1" ? "ZONE 1" : "ZONE 2"}
-                          </div>
-                          <div
-                            style={{
-                              borderRadius: 999,
-                              padding: "3px 8px",
-                              fontSize: 10,
-                              fontWeight: 800,
-                              letterSpacing: 0.8,
-                              color: statusColor,
-                              border: `1px solid color-mix(in srgb, ${statusColor} 45%, transparent)`,
-                              background: "rgba(0,0,0,0.22)",
-                            }}
-                          >
-                            {status}
-                          </div>
-                        </div>
-
-                        <div style={{ color: hasFeed ? "#86efac" : "rgba(148,163,184,0.9)", fontSize: 13, fontWeight: 700 }}>
-                          {hasFeed ? "● Active" : "○ No Feed"}
-                        </div>
-
-                        <div style={{ color: "#f8fafc", fontSize: 13 }}>
-                          People: <strong>{zone_data[zoneKey].cam_people_count}</strong>
-                        </div>
-
-                        <div>
-                          <div style={{ color: "rgba(248,250,252,0.6)", fontSize: 11, marginBottom: 6 }}>Sensor Validation</div>
-                          <div style={{ height: 8, borderRadius: 999, background: "rgba(15,23,42,0.7)", overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)" }}>
-                            <div
-                              style={{
-                                width: `${validation}%`,
-                                height: "100%",
-                                background: statusColor,
-                                boxShadow: `0 0 12px color-mix(in srgb, ${statusColor} 60%, transparent)`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
               <MLInsightsPanel hardware={hardware} loading={isLoading} />
             </div>
 

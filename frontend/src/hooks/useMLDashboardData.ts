@@ -138,7 +138,7 @@ export const useMLDashboardData = (pollIntervalMs = 1500) => {
 
     const id = setInterval(async () => {
       try {
-        await fetchSnapshot();
+        await Promise.all([fetchSnapshot(), fetchSupportingData()]);
       } catch (err: any) {
         const message = err?.response?.data?.message || err?.message || "Snapshot polling failed";
         setState((prev) => ({ ...prev, error: message }));

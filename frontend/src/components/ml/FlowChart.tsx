@@ -7,7 +7,7 @@ type Props = {
   loading?: boolean;
 };
 
-const chartHeight = 160;
+const chartHeight = 320;
 
 export const FlowChart: React.FC<Props> = ({ data, loading }) => {
   const points = data ?? [];
@@ -22,7 +22,7 @@ export const FlowChart: React.FC<Props> = ({ data, loading }) => {
 
   if (loading) {
     return (
-      <div className="glass-card" style={{ padding: 16, width: "100%", minWidth: 0 }}>
+      <div className="glass-card" style={{ padding: 24, width: "100%", minWidth: 0 }}>
         <Skeleton height={chartHeight} />
       </div>
     );
@@ -30,11 +30,11 @@ export const FlowChart: React.FC<Props> = ({ data, loading }) => {
 
   if (!points.length) {
     return (
-      <div className="glass-card" style={{ padding: 16, color: "#f8fafc", width: "100%", minWidth: 0 }}>Flow data unavailable</div>
+      <div className="glass-card" style={{ padding: 24, color: "#f8fafc", width: "100%", minWidth: 0 }}>Flow data unavailable</div>
     );
   }
 
-  const width = Math.max(240, points.length * 40);
+  const width = Math.max(800, points.length * 40);
 
   const scaleX = (index: number) => (index / Math.max(points.length - 1, 1)) * width;
   const scaleY = (value: number) => {
@@ -48,22 +48,33 @@ export const FlowChart: React.FC<Props> = ({ data, loading }) => {
       .join(" ");
 
   return (
-    <div className="glass-card" style={{ padding: 16, width: "100%", minWidth: 0 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-        <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "2px" }}>CROWD FLOW</div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center", color: "rgba(248, 250, 252, 0.7)", fontSize: 14 }}>
+    <div className="glass-card" style={{ padding: 24, width: "100%", minWidth: 0 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+        <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: "12px", textTransform: "uppercase", letterSpacing: "2px" }}>CROWD FLOW</div>
+        <div style={{ display: "flex", gap: 16, alignItems: "center", color: "rgba(248, 250, 252, 0.7)", fontSize: 14 }}>
           <Legend color="#38bdf8" label="Inflow" />
           <Legend color="#f97316" label="Outflow" />
           <Legend color="#a855f7" label="Net" />
         </div>
       </div>
-      <div style={{ overflowX: "auto", paddingBottom: 8, scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.1) transparent" }}>
-        <svg width={width} height={chartHeight} style={{ display: "block" }}>
+      <div style={{ overflowX: "auto", paddingBottom: 12, scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.1) transparent" }}>
+        <svg width={width} height={chartHeight} style={{ display: "block", minWidth: "100%" }}>
           <Axes />
-          <path d={linePath((p) => p.inflow)} fill="none" stroke="#38bdf8" strokeWidth={2} strokeLinejoin="round" />
-          <path d={linePath((p) => p.outflow)} fill="none" stroke="#f97316" strokeWidth={2} strokeLinejoin="round" />
+          <path d={linePath((p) => p.inflow)} fill="none" stroke="#38bdf8" strokeWidth={3} strokeLinejoin="round" />
+          <path d={linePath((p) => p.outflow)} fill="none" stroke="#f97316" strokeWidth={3} strokeLinejoin="round" />
           <path d={linePath((p) => p.net)} fill="none" stroke="#a855f7" strokeWidth={2} strokeLinejoin="round" strokeDasharray="6 4" />
         </svg>
+      </div>
+
+      <div style={{ marginTop: 20, padding: 16, background: "rgba(56, 189, 248, 0.05)", borderRadius: 12, border: "1px solid rgba(56, 189, 248, 0.15)" }}>
+        <div style={{ color: "rgba(56, 189, 248, 0.8)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 6 }}>
+          HOW TO INTERPRET
+        </div>
+        <div style={{ color: "rgba(248, 250, 252, 0.85)", fontSize: 14, lineHeight: 1.5 }}>
+          The solid <strong>Inflow</strong> (blue) and <strong>Outflow</strong> (orange) lines plot the rate of individuals entering and exiting the zones per minute.
+          The dashed <strong>Net</strong> (purple) line plots the net accumulation or dispersion of people within the monitored areas. A rising
+          net flow suggests impending bottlenecks or congestion that should be evaluated if it persists.
+        </div>
       </div>
     </div>
   );

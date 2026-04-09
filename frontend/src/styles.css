@@ -105,8 +105,8 @@
 }
 
 :root {
-  --font-heading: Tahoma, sans-serif;
-  --font-body: Inter, Roboto, sans-serif;
+  --font-heading: "Satoshi", "Plus Jakarta Sans", sans-serif;
+  --font-body: "Satoshi", "Plus Jakarta Sans", sans-serif;
   --font-ui: "Performa", "Plus Jakarta Sans", sans-serif;
   --color-bg: #0b0a14;
   --color-card: rgba(26, 25, 38, 0.8);

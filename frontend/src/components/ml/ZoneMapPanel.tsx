@@ -44,7 +44,6 @@ const ZoneCard: React.FC<{
   data: ZoneData;
 }> = ({ zoneKey, title, status, data }) => {
   const visual = statusVisuals[status];
-  const statusIcon = status === "SAFE" ? "✅" : status === "MODERATE" ? "⚠️" : "🔴";
   const sensorScore = Math.max(0, Math.min(100, Number(data.validation_score) || 0));
 
   return (
@@ -80,7 +79,7 @@ const ZoneCard: React.FC<{
       </div>
 
       <div style={{ color: "rgba(248, 250, 252, 0.65)", fontSize: 12, letterSpacing: 0.8, textTransform: "uppercase" }}>
-        📷 CAM + PIR + IR
+        CAM + PIR + IR
       </div>
 
       <div style={{ color: "#f8fafc", fontSize: 16, fontWeight: 700 }}>People: {data.cam_people_count}</div>
@@ -111,8 +110,8 @@ const ZoneCard: React.FC<{
         </div>
       </div>
 
-      <div style={{ color: visual.text, fontWeight: 800, fontSize: 14, marginTop: "auto" }}>
-        {statusIcon}{" "}
+      <div style={{ color: visual.text, fontWeight: 800, fontSize: 14, marginTop: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ width: 8, height: 8, borderRadius: "50%", background: visual.border, boxShadow: `0 0 10px ${visual.border}` }} />
         {status}
       </div>
     </div>

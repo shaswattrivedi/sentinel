@@ -28,11 +28,14 @@ const FeedTile: React.FC<{
       style={{
         position: "relative",
         overflow: "hidden",
-        height: 200,
+        width: "100%",
+        minHeight: 350,
         borderRadius: 12,
         border: `1px solid color-mix(in srgb, ${borderColor} 85%, transparent)`,
         boxShadow: `0 10px 26px color-mix(in srgb, ${borderColor} 18%, transparent)`,
         background: "rgba(2, 6, 23, 0.78)",
+        display: "flex",
+        flexDirection: "column"
       }}
     >
       <div style={{ position: "absolute", top: 10, left: 10, zIndex: 3 }}>
@@ -87,13 +90,14 @@ const FeedTile: React.FC<{
         <img
           src={`data:image/jpeg;base64,${frame}`}
           alt={`${zoneLabel} annotated live feed`}
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          style={{ width: "100%", height: "100%", flex: 1, objectFit: "contain", display: "block", background: "#000" }}
         />
       ) : (
         <div
           style={{
             width: "100%",
             height: "100%",
+            flex: 1,
             display: "grid",
             placeItems: "center",
             color: "rgba(248, 250, 252, 0.68)",
@@ -116,14 +120,13 @@ const FeedTile: React.FC<{
 export const CameraFeedPanel: React.FC<CameraFeedPanelProps> = ({ annotatedFrames, zoneData, zoneStatus }) => {
   return (
     <div
-      className="glass-card"
       style={{
         position: "relative",
         overflow: "hidden",
-        height: 200,
+        width: "100%",
         display: "grid",
-        gridTemplateColumns: "1fr 1px 1fr",
-        borderRadius: 14,
+        gridTemplateColumns: "1fr 1fr",
+        gap: 16,
       }}
     >
       <FeedTile
@@ -132,8 +135,6 @@ export const CameraFeedPanel: React.FC<CameraFeedPanelProps> = ({ annotatedFrame
         peopleCount={zoneData["zone-1"].cam_people_count}
         status={zoneStatus["zone-1"]}
       />
-
-      <div style={{ width: 1, height: "100%", background: "rgba(255,255,255,0.12)" }} />
 
       <FeedTile
         zoneId="zone-2"
