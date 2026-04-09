@@ -128,7 +128,10 @@ export const ZoneMapPanel: React.FC<ZoneMapPanelProps> = ({ zoneStatus, zoneData
         borderRadius: 18,
         padding: 16,
         display: "flex",
-        flexDirection: "column"
+        flexDirection: "column",
+        width: "100%",
+        height: "100%",
+        flex: 1
       }}
     >
       <style>{`
@@ -138,6 +141,10 @@ export const ZoneMapPanel: React.FC<ZoneMapPanelProps> = ({ zoneStatus, zoneData
           100% { transform: translateX(100%); opacity: 0.2; }
         }
       `}</style>
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 9999, border: "1px solid rgba(177, 158, 239, 0.18)", background: "rgba(11, 10, 21, 0.7)", backdropFilter: "blur(20px) saturate(1.4)", WebkitBackdropFilter: "blur(20px) saturate(1.4)", boxShadow: "0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(177, 158, 239, 0.06), inset 0 1px 0 rgba(255,255,255,0.04)", width: "fit-content", color: "#f8fafc", fontSize: 13, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 12 }}>
+        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--color-safe)", boxShadow: "0 0 8px var(--color-safe)" }} />
+        LIVE ZONE MAP
+      </div>
       <div style={{ display: "flex", flexDirection: "column", flex: 1, justifyContent: "center" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "stretch" }}>
           <ZoneCard zoneKey="zone-1" title="ZONE 1" status={zoneStatus["zone-1"]} data={zoneData["zone-1"]} />

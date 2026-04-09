@@ -60,13 +60,15 @@ class AggregationService:
             }
 
         risk_level = latest.risk_level
+        raw_risk_score = getattr(latest, "raw_risk_score", None)
+        resolved_risk_score = float(raw_risk_score) if raw_risk_score is not None else self.risk_score_map.get(risk_level, 0.0)
         return {
             "timestamp": latest.timestamp,
             "zone_id": latest.zone_id,
             "crowd_count": latest.fused_crowd_count,
             "density_level": latest.crowd_density,
             "risk_level": risk_level,
-            "risk_score": self.risk_score_map.get(risk_level, 0.0),
+            "risk_score": round(max(0.0, min(100.0, resolved_risk_score)), 2),
             "risk_color": self.risk_color_map.get(risk_level, "gray"),
             "system_state": self.state_map.get(risk_level, "NORMAL"),
             "fusion_confidence": latest.fusion_confidence,
@@ -76,10 +78,12 @@ class AggregationService:
     def timeline(self, limit: int = 200) -> List[dict]:
         points = []
         for o in self.store.get_recent_outputs(limit=limit):
+            raw_risk_score = getattr(o, "raw_risk_score", None)
+            resolved_risk_score = float(raw_risk_score) if raw_risk_score is not None else self.risk_score_map.get(o.risk_level, 0.0)
             points.append(
                 {
                     "timestamp": o.timestamp,
-                    "risk_score": self.risk_score_map.get(o.risk_level, 0.0),
+                    "risk_score": round(max(0.0, min(100.0, resolved_risk_score)), 2),
                     "risk_level": o.risk_level,
                     "density_level": o.crowd_density,
                 }
@@ -109,14 +113,20 @@ class AggregationService:
 
     def alerts(self, limit: int = 50) -> List[dict]:
         alert_outputs = self.store.get_recent_alerts(limit=limit)
+        source_outputs = alert_outputs
+
+        # Keep alerts feed informative even when there are no elevated events yet.
+        if not source_outputs:
+            source_outputs = self.store.get_recent_outputs(limit=min(limit, 10))
+
         return [
             {
                 "timestamp": output.timestamp,
                 "alert_status": output.alert_status,
-                "alert_severity": output.alert_severity,
+                "alert_severity": output.alert_severity if output.alert_status else "INFO",
                 "explanation": output.explanation_text,  # Map explanation_text to explanation
             }
-            for output in alert_outputs
+            for output in source_outputs
         ]
 
     def decision(self) -> dict:

@@ -47,8 +47,11 @@ const FeedTile: React.FC<{
             fontSize: 11,
             fontWeight: 700,
             letterSpacing: 0.45,
-            background: "rgba(0, 0, 0, 0.38)",
-            border: "1px solid rgba(255,255,255,0.24)",
+            border: "1px solid rgba(177, 158, 239, 0.18)",
+            background: "rgba(11, 10, 21, 0.7)",
+            backdropFilter: "blur(20px) saturate(1.4)",
+            WebkitBackdropFilter: "blur(20px) saturate(1.4)",
+            boxShadow: "0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(177, 158, 239, 0.06), inset 0 1px 0 rgba(255,255,255,0.04)"
           }}
         >
           {zoneLabel} • {peopleCount} people
@@ -66,8 +69,11 @@ const FeedTile: React.FC<{
             fontSize: 11,
             fontWeight: 800,
             letterSpacing: 0.8,
-            background: "rgba(0, 0, 0, 0.38)",
-            border: "1px solid rgba(255,255,255,0.24)",
+            border: "1px solid rgba(177, 158, 239, 0.18)",
+            background: "rgba(11, 10, 21, 0.7)",
+            backdropFilter: "blur(20px) saturate(1.4)",
+            WebkitBackdropFilter: "blur(20px) saturate(1.4)",
+            boxShadow: "0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(177, 158, 239, 0.06), inset 0 1px 0 rgba(255,255,255,0.04)",
             display: "inline-flex",
             alignItems: "center",
             gap: 6,

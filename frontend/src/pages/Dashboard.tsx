@@ -82,6 +82,8 @@ const Dashboard: React.FC = () => {
     { id: "OPERATIONS", label: "OPERATIONS", dotColor: "var(--color-safe)" }
   ];
 
+  const tabViewportHeight = "calc(100vh - 170px)";
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", fontFamily: "var(--font-dashboard)", color: "#f8fafc" }}>
       <div
@@ -266,8 +268,8 @@ const Dashboard: React.FC = () => {
                   style={{ overflow: "hidden" }}
                 >
                   <div className="glass-card" style={{
-                    background: "rgba(220, 38, 38, 0.4)",
-                    border: "1px solid rgba(255, 60, 60, 0.6)",
+                    background: "rgba(220, 38, 38, 0.28)",
+                    border: "1px solid rgba(255, 80, 80, 0.45)",
                     boxShadow: "none",
                     color: "#ffffff",
                     padding: "16px 20px",
@@ -307,81 +309,68 @@ const Dashboard: React.FC = () => {
               )}
             </AnimatePresence>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ 
-                color: "#f8fafc", 
-                fontSize: 16, 
-                textTransform: "uppercase", 
-                letterSpacing: "2px", 
-                fontWeight: 800, 
-                padding: "8px 16px", 
-                marginTop: 8,
-                background: "linear-gradient(90deg, rgba(255,255,255,0.06) 0%, transparent 100%)",
-                borderLeft: "3px solid var(--color-info)",
-                borderRadius: "0 8px 8px 0"
-              }}>
+            <div style={{ minHeight: 360, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 9999, border: "1px solid rgba(177, 158, 239, 0.18)", background: "rgba(11, 10, 21, 0.7)", backdropFilter: "blur(20px) saturate(1.4)", WebkitBackdropFilter: "blur(20px) saturate(1.4)", boxShadow: "0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(177, 158, 239, 0.06), inset 0 1px 0 rgba(255,255,255,0.04)", width: "fit-content", color: "#f8fafc", fontSize: 13, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase" }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--color-info)", boxShadow: "0 0 8px var(--color-info)" }} />
                 Live Camera Feed
               </div>
-              <CameraFeedPanel
-                annotatedFrames={annotated_frames}
-                zoneData={zone_data}
-                zoneStatus={zone_status}
-              />
+              <div style={{ borderRadius: 14, padding: 2, background: "transparent" }}>
+                <CameraFeedPanel
+                  annotatedFrames={annotated_frames}
+                  zoneData={zone_data}
+                  zoneStatus={zone_status}
+                />
+              </div>
             </div>
 
-            <div style={{ margin: "16px 0", height: 1, background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%)" }} />
-
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ 
-                color: "#f8fafc", 
-                fontSize: 16, 
-                textTransform: "uppercase", 
-                letterSpacing: "2px", 
-                fontWeight: 800, 
-                padding: "8px 16px",
-                background: "linear-gradient(90deg, rgba(255,255,255,0.06) 0%, transparent 100%)",
-                borderLeft: "3px solid var(--color-warning)",
-                borderRadius: "0 8px 8px 0"
-              }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 9999, border: "1px solid rgba(177, 158, 239, 0.18)", background: "rgba(11, 10, 21, 0.7)", backdropFilter: "blur(20px) saturate(1.4)", WebkitBackdropFilter: "blur(20px) saturate(1.4)", boxShadow: "0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(177, 158, 239, 0.06), inset 0 1px 0 rgba(255,255,255,0.04)", width: "fit-content", color: "#f8fafc", fontSize: 13, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase" }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--color-warning)", boxShadow: "0 0 8px var(--color-warning)" }} />
                 Zone Analysis & Risk Density
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "stretch" }}>
-                <ZoneMapPanel zoneStatus={zone_status} zoneData={zone_data} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "stretch", height: "100%" }}>
+                <div style={{ borderRadius: 14, background: "transparent", display: "flex" }}>
+                  <ZoneMapPanel zoneStatus={zone_status} zoneData={zone_data} />
+                </div>
 
-                <CombinedRiskDensityCard
-                  score={Number.isFinite(risk_score) ? risk_score : overview?.riskScore ?? null}
-                  level={riskLevelFromSystem}
-                  density={overview?.densityLevel ?? null}
-                  hardware={hardware}
-                  loading={isLoading}
-                />
+                <div style={{ borderRadius: 14, background: "transparent", display: "flex" }}>
+                  <CombinedRiskDensityCard
+                    score={Number.isFinite(risk_score) ? risk_score : overview?.riskScore ?? null}
+                    level={riskLevelFromSystem}
+                    density={overview?.densityLevel ?? null}
+                    hardware={hardware}
+                    loading={isLoading}
+                  />
+                </div>
               </div>
             </div>
           </div>
         )}
 
         {activeTab === "ANALYTICS" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16, height: "100%", flex: 1 }}>
-            <div style={{ flex: "0 1 50%", minHeight: 300, display: "flex" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
+            <div style={{ height: tabViewportHeight, minHeight: 420, display: "flex", flexShrink: 0 }}>
               <RiskTimelineChart data={timeline} loading={isLoading} />
             </div>
 
-            <div style={{ flex: "0 1 50%", minHeight: 300, display: "flex" }}>
+            <div style={{ height: tabViewportHeight, minHeight: 420, display: "flex", flexShrink: 0 }}>
               <FlowChart data={flow} loading={isLoading} />
             </div>
           </div>
         )}
 
         {activeTab === "OPERATIONS" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "stretch", height: "100%", flex: 1 }}>
-            {/* LEFT COLUMN */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, height: "100%", minHeight: 0 }}>
-              <MLInsightsPanel hardware={hardware} loading={isLoading} />
-            </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "stretch", height: tabViewportHeight, minHeight: 420, flexShrink: 0 }}>
+              {/* LEFT COLUMN */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, height: "100%" }}>
+                <MLInsightsPanel hardware={hardware} loading={isLoading} />
+              </div>
 
-            {/* RIGHT COLUMN */}
-            <div style={{ height: "100%", minHeight: 0 }}>
-              <AlertsPanel alerts={alerts} loading={isLoading} fillHeight />
+              {/* RIGHT COLUMN */}
+              <div style={{ height: "100%" }}>
+                <AlertsPanel alerts={alerts} loading={isLoading} fillHeight />
+              </div>
             </div>
           </div>
         )}

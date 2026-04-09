@@ -19,6 +19,10 @@ import problemStampedes from "@/assets/problem-stampedes.png";
 import problemInjuries from "@/assets/problem-injuries.png";
 import problemFire from "@/assets/problem-fire.png";
 
+const LANDING_HEADING_STACK = "Tahoma, sans-serif";
+const LANDING_BODY_STACK = "Inter, Roboto, sans-serif";
+const LANDING_UI_STACK = "Performa, 'Plus Jakarta Sans', sans-serif";
+
 const STAT_SLIDES: StatSlide[] = [
   {
     image: problemStampedes,
@@ -80,8 +84,8 @@ const Card: React.FC<{ title: string; children: React.ReactNode }> = ({ title, c
         textAlign: "left"
       }}
     >
-      <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 24, textAlign: "center", letterSpacing: 0.2 }}>{title}</div>
-      <div style={{ color: "rgba(248, 250, 252, 0.82)", fontSize: 15.5, lineHeight: 1.6, display: "flex", flexDirection: "column", gap: 9 }}>{children}</div>
+      <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 24, textAlign: "center", letterSpacing: 0.2, fontFamily: LANDING_HEADING_STACK }}>{title}</div>
+      <div style={{ color: "rgba(248, 250, 252, 0.82)", fontSize: 15.5, lineHeight: 1.6, display: "flex", flexDirection: "column", gap: 9, fontFamily: LANDING_BODY_STACK }}>{children}</div>
     </div>
   </SpotlightCard>
 );
@@ -113,7 +117,7 @@ const Landing: React.FC = () => {
 
   const [productTab, setProductTab] = useState(0);
   const productTabs = ["THE PROBLEM", "CURRENT SOLUTIONS", "SENTINEL'S ADVANTAGE"] as const;
-  const performaTabStack = "Performa, 'Plus Jakarta Sans', sans-serif";
+  const performaTabStack = LANDING_UI_STACK;
 
   /* ── Scroll-aware navbar hide/show ── */
   const [navVisible, setNavVisible] = useState(true);
@@ -146,7 +150,7 @@ const Landing: React.FC = () => {
   }, [handleScroll]);
 
   return (
-    <div id="top" style={{ color: "#f8fafc", scrollBehavior: "smooth", fontFamily: '"Plus Jakarta Sans", "Satoshi", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+    <div id="top" style={{ color: "#f8fafc", scrollBehavior: "smooth", fontFamily: LANDING_BODY_STACK }}>
       {/* ── Floating Pill Navbar ── */}
       <div
         style={{
@@ -221,6 +225,7 @@ const Landing: React.FC = () => {
                   background: "transparent",
                   color: "rgba(248, 250, 252, 0.7)",
                   cursor: "pointer",
+                  fontFamily: LANDING_UI_STACK,
                   fontWeight: 600,
                   fontSize: 14,
                   letterSpacing: 0.2,
@@ -254,6 +259,7 @@ const Landing: React.FC = () => {
                 border: "1px solid rgba(177, 158, 239, 0.35)",
                 color: "#f8fafc",
                 textDecoration: "none",
+                fontFamily: LANDING_UI_STACK,
                 fontWeight: 600,
                 fontSize: 14,
                 letterSpacing: 0.2,
@@ -297,7 +303,7 @@ const Landing: React.FC = () => {
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 22, textAlign: "left", alignItems: "flex-start", paddingLeft: 18 }}>
-            <div style={{ fontSize: 74, fontWeight: 800, letterSpacing: 0.2, lineHeight: 1.25 }}>
+            <div style={{ fontSize: 74, fontWeight: 800, letterSpacing: 0.2, lineHeight: 1.25, fontFamily: LANDING_HEADING_STACK }}>
               <ShinyText
                 text="Crowd Safety, Reimagined."
                 speed={2.6}
@@ -308,7 +314,7 @@ const Landing: React.FC = () => {
                 yoyo
               />
             </div>
-            <div style={{ fontSize: 22, fontWeight: 500, color: "rgba(248, 250, 252, 0.78)", maxWidth: 560, lineHeight: 1.6, letterSpacing: 0.5 }}>
+            <div style={{ fontSize: 22, fontWeight: 500, color: "rgba(248, 250, 252, 0.78)", maxWidth: 560, lineHeight: 1.6, letterSpacing: 0.5, fontFamily: LANDING_BODY_STACK }}>
               Proactive intelligence for safer, smarter evacuations.
             </div>
             <div style={{ display: "flex", gap: 14, marginTop: 16 }}>
@@ -321,6 +327,7 @@ const Landing: React.FC = () => {
                   border: "1px solid rgba(177, 158, 239, 0.35)",
                   color: "#f8fafc",
                   textDecoration: "none",
+                  fontFamily: LANDING_UI_STACK,
                   fontWeight: 700,
                   fontSize: 15,
                   letterSpacing: 0.2,
@@ -352,6 +359,7 @@ const Landing: React.FC = () => {
                   border: "1px solid rgba(177, 158, 239, 0.35)",
                   color: "#f8fafc",
                   textDecoration: "none",
+                  fontFamily: LANDING_UI_STACK,
                   fontWeight: 700,
                   fontSize: 15,
                   letterSpacing: 0.2,
@@ -406,6 +414,7 @@ const Landing: React.FC = () => {
           style={{
             fontSize: 68,
             fontWeight: 800,
+            fontFamily: LANDING_HEADING_STACK,
             textAlign: "center",
             marginBottom: 36
           }}
@@ -520,8 +529,8 @@ const Landing: React.FC = () => {
                 }}
               >
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                  <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", textAlign: "center", paddingBottom: 12 }}>The Root Cause</div>
-                  <div style={{ color: "rgba(248, 250, 252, 0.78)", fontSize: 17, lineHeight: 1.7 }}>
+                  <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", textAlign: "center", paddingBottom: 12, fontFamily: LANDING_HEADING_STACK }}>The Root Cause</div>
+                  <div style={{ color: "rgba(248, 250, 252, 0.78)", fontSize: 17, lineHeight: 1.7, fontFamily: LANDING_BODY_STACK }}>
                     Crowd risk rarely originates from panic; it develops through early-stage imbalances such as uneven flow, localized density accumulation, and delayed response. As these conditions intensify, safety diminishes and decision windows narrow. By the time risk becomes visible, reaction time has already collapsed, forcing response into a reactive state.
                     <br /><br />
                     <span style={{ color: "rgba(177, 158, 239, 0.9)", fontWeight: 600}}>
@@ -563,7 +572,7 @@ const Landing: React.FC = () => {
                 transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
                 style={{ maxWidth: 960, margin: "0 auto" }}
               >
-                <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", marginBottom: 26, textAlign: "center" }}>
+                <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", marginBottom: 26, textAlign: "center", fontFamily: LANDING_HEADING_STACK }}>
                   Why Existing Systems Fall Short
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 18, textAlign: "center", marginTop: 44, cursor: "default"}}>
@@ -592,8 +601,8 @@ const Landing: React.FC = () => {
                         }}
                       >
                         <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
-                          <div style={{ fontWeight: 800, fontSize: 18, color: "#f8fafc" }}>{item.title}</div>
-                          <div style={{ color: "rgba(248, 250, 252, 0.72)", fontSize: 14.5, lineHeight: 1.7 }}>{item.desc}</div>
+                          <div style={{ fontWeight: 800, fontSize: 18, color: "#f8fafc", fontFamily: LANDING_HEADING_STACK }}>{item.title}</div>
+                          <div style={{ color: "rgba(248, 250, 252, 0.72)", fontSize: 14.5, lineHeight: 1.7, fontFamily: LANDING_BODY_STACK }}>{item.desc}</div>
                         </div>
                       </SpotlightCard>
                     </motion.div>
@@ -641,10 +650,10 @@ const Landing: React.FC = () => {
                   </div>
                 </motion.div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                  <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", textAlign: "center", paddingBottom: 12 }}>
+                  <div style={{ fontSize: 40, fontWeight: 800, color: "#f8fafc", textAlign: "center", paddingBottom: 12, fontFamily: LANDING_HEADING_STACK }}>
                     Reaction to Prediction
                   </div>
-                  <div style={{ color: "rgba(248, 250, 252, 0.78)", fontSize: 17, lineHeight: 1.7, fontWeight: 400 }}>
+                  <div style={{ color: "rgba(248, 250, 252, 0.78)", fontSize: 17, lineHeight: 1.7, fontWeight: 400, fontFamily: LANDING_BODY_STACK }}>
                     • SENTINEL combines distributed sensing with flow-aware machine learning to continuously analyze crowd dynamics in real time.
                     <br /><br />
                     • Congestion patterns, density imbalances, and directional conflicts are identified before risk becomes visible.
@@ -723,17 +732,17 @@ const Landing: React.FC = () => {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 0.3fr))", gap: 18, alignItems: "center", justifyContent: "center"}}>
           <Card title="Large Public Buildings">
-            <div style={{ textAlign: "center", fontSize: 18 }}>
+            <div style={{ textAlign: "center", fontSize: 18, fontFamily: LANDING_BODY_STACK }}>
               Malls, airports, and convention centers rely on uninterrupted movement. SENTINEL keeps lobbies and corridors flowing, flags risky congestion early, and guides staff to respond before queues harden into blockages.
             </div>
           </Card>
           <Card title="Educational Institutions">
-            <div style={{ textAlign: "center", fontSize: 18 }}>
+            <div style={{ textAlign: "center", fontSize: 18, fontFamily: LANDING_BODY_STACK }}>
               Campuses, schools, and exam halls juggle surges at bells and events. Real-time density sensing and predictive routing help disperse crowds, keep stairwells clear, and protect students during drills or incidents.
             </div>
           </Card>
           <Card title="Mass Gathering Venues">
-            <div style={{ textAlign: "center", fontSize: 18 }}>
+            <div style={{ textAlign: "center", fontSize: 18, fontFamily: LANDING_BODY_STACK }}>
               Stadiums, concerts, and religious gatherings demand rapid, safe egress. The platform detects turbulence in crowd flow, issues targeted guidance, and aligns stewards to keep routes clear when emotions run high.
             </div>
           </Card>

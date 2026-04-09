@@ -32,11 +32,59 @@ export const MLInsightsPanel: React.FC<Props> = ({ hardware, loading }) => {
 
   if (!hardware || !hardware.trend_prediction) {
     return (
-      <div className="glass-card" style={{ padding: 20, height: "100%", color: "#f8fafc" }}>
-        <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "2px", marginBottom: 12 }}>
-          PREDICTIVE INSIGHTS
+      <div className="glass-card" style={{ padding: 24, height: "100%", display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 9999, border: "1px solid rgba(177, 158, 239, 0.18)", background: "rgba(11, 10, 21, 0.7)", backdropFilter: "blur(20px) saturate(1.4)", WebkitBackdropFilter: "blur(20px) saturate(1.4)", boxShadow: "0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(177, 158, 239, 0.06), inset 0 1px 0 rgba(255,255,255,0.04)", width: "fit-content", color: "#f8fafc", fontSize: 13, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase" }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--color-info)", boxShadow: "0 0 8px var(--color-info)" }} />
+            PREDICTIVE INSIGHTS & TRENDS
+          </div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+            <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: 11, textTransform: "uppercase", letterSpacing: "1px" }}>Confidence</div>
+            <div style={{ color: "rgba(248, 250, 252, 0.55)", fontWeight: 700, fontSize: 16 }}>--</div>
+          </div>
         </div>
-        No predictive data available.
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+          <div style={{ background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)", position: "relative", overflow: "hidden" }}>
+            <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: 13, marginBottom: 8, textTransform: "uppercase", letterSpacing: "1px" }}>Trend</div>
+            <div style={{ color: "rgba(248, 250, 252, 0.55)", fontWeight: 800, fontSize: 24, textTransform: "uppercase" }}>
+              No Data
+            </div>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)", textAlign: "right", position: "relative", overflow: "hidden" }}>
+            <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: 13, marginBottom: 8, textTransform: "uppercase", letterSpacing: "1px" }}>Predicted Density</div>
+            <div style={{ color: "rgba(248, 250, 252, 0.55)", fontWeight: 800, fontSize: 24 }}>
+              --
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, background: "rgba(255,255,255,0.03)", padding: "18px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div style={{ padding: 10, background: "rgba(255,255,255,0.06)", borderRadius: "50%" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(248, 250, 252, 0.55)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={{ fontWeight: 800, fontSize: 15, textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(248, 250, 252, 0.7)" }}>
+                Awaiting Predictive Stream
+              </span>
+              <span style={{ color: "rgba(248, 250, 252, 0.8)", fontSize: 14, lineHeight: 1.5, fontWeight: 500 }}>
+                Telemetry has not produced enough data yet. This card keeps the same layout and will populate automatically as readings arrive.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 12 }}>
+          <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid rgba(255,255,255,0.03)" }}>
+            <div style={{ color: "rgba(248, 250, 252, 0.6)", fontSize: 12, fontWeight: 600, letterSpacing: "0.5px" }}>FORECAST HORIZON</div>
+            <div style={{ color: "rgba(248, 250, 252, 0.55)", fontSize: 16, fontWeight: 800, textTransform: "uppercase", letterSpacing: "1px" }}>No Data</div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -75,7 +123,8 @@ export const MLInsightsPanel: React.FC<Props> = ({ hardware, loading }) => {
   return (
     <div className="glass-card" style={{ padding: 24, height: "100%", display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "2px" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 9999, border: "1px solid rgba(177, 158, 239, 0.18)", background: "rgba(11, 10, 21, 0.7)", backdropFilter: "blur(20px) saturate(1.4)", WebkitBackdropFilter: "blur(20px) saturate(1.4)", boxShadow: "0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(177, 158, 239, 0.06), inset 0 1px 0 rgba(255,255,255,0.04)", width: "fit-content", color: "#f8fafc", fontSize: 13, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase" }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--color-info)", boxShadow: "0 0 8px var(--color-info)" }} />
           PREDICTIVE INSIGHTS & TRENDS
         </div>
         {typeof confidence === "number" && (
@@ -88,14 +137,12 @@ export const MLInsightsPanel: React.FC<Props> = ({ hardware, loading }) => {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
         <div style={{ background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", right: -10, top: -10, opacity: 0.1, fontSize: 60 }}>📈</div>
           <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: 13, marginBottom: 8, textTransform: "uppercase", letterSpacing: "1px" }}>Trend</div>
           <div style={{ color: trendColor, fontWeight: 800, fontSize: 24, textTransform: "uppercase" }}>
             {trend}
           </div>
         </div>
         <div style={{ background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)", textAlign: "right", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", left: -5, top: -5, opacity: 0.1, fontSize: 60 }}>🎯</div>
           <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: 13, marginBottom: 8, textTransform: "uppercase", letterSpacing: "1px" }}>Predicted Density</div>
           <div style={{ color: predictionColorMap[pred] ?? "rgba(248, 250, 252, 0.5)", fontWeight: 800, fontSize: 24 }}>
             {density.toFixed(0)}%
@@ -123,7 +170,7 @@ export const MLInsightsPanel: React.FC<Props> = ({ hardware, loading }) => {
         </div>
       </div>
 
-      <div style={{ marginTop: "auto", paddingTop: 20 }}>
+      <div style={{ marginTop: 12 }}>
         <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid rgba(255,255,255,0.03)" }}>
            <div style={{ color: "rgba(248, 250, 252, 0.6)", fontSize: 12, fontWeight: 600, letterSpacing: "0.5px" }}>FORECAST HORIZON</div>
            <div style={{ color: predictionColorMap[pred] ?? "rgba(248, 250, 252, 0.5)", fontSize: 16, fontWeight: 800, textTransform: "uppercase", letterSpacing: "1px" }}>{pred.replace("_", " ")}</div>

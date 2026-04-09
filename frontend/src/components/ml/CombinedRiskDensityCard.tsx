@@ -63,10 +63,11 @@ export const CombinedRiskDensityCard: React.FC<Props> = ({ score, level, density
   const info = densityText[density] ?? densityText.LOW;
 
   return (
-    <div className="glass-card" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 20 }}>
+    <div className="glass-card" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 20, width: "100%", height: "100%", flex: 1, justifyContent: "center" }}>
       {/* Top Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "2px" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 9999, border: "1px solid rgba(177, 158, 239, 0.18)", background: "rgba(11, 10, 21, 0.7)", backdropFilter: "blur(20px) saturate(1.4)", WebkitBackdropFilter: "blur(20px) saturate(1.4)", boxShadow: "0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(177, 158, 239, 0.06), inset 0 1px 0 rgba(255,255,255,0.04)", width: "fit-content", color: "#f8fafc", fontSize: 13, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase" }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--color-warning)", boxShadow: "0 0 8px var(--color-warning)" }} />
           RISK & DENSITY
         </div>
       </div>
@@ -137,7 +138,8 @@ export const CombinedRiskDensityCard: React.FC<Props> = ({ score, level, density
       {/* Optional Zone Status row embedded underneath */}
       {hardware?.zone_status && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-          <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "2px" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 9999, border: "1px solid rgba(177, 158, 239, 0.18)", background: "rgba(11, 10, 21, 0.7)", backdropFilter: "blur(20px) saturate(1.4)", WebkitBackdropFilter: "blur(20px) saturate(1.4)", boxShadow: "0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(177, 158, 239, 0.06), inset 0 1px 0 rgba(255,255,255,0.04)", width: "fit-content", color: "#f8fafc", fontSize: 13, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase" }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--color-safe)", boxShadow: "0 0 8px var(--color-safe)" }} />
             ZONE STATUS
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>

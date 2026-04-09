@@ -18,3 +18,4 @@ class IntelligenceOutput:
     explanation_text: str
     camera_people_count: Optional[float] = None
     sensor_people_count: Optional[float] = None
+    raw_risk_score: Optional[float] = None

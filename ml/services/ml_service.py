@@ -138,6 +138,7 @@ class MLService:
         """Bridge IoT-native result into dashboard's historical output contract."""
         features = result["features"]
         avg_density = float(features["avg_zone_risk"])
+        raw_risk_score = float(result.get("risk_score", avg_density))
         system_status = str(result["system_status"])
         decision = self._decision_from_status(system_status)
 
@@ -161,4 +162,5 @@ class MLService:
             explanation_text=str(result["reason"]),
             camera_people_count=camera_people_count,
             sensor_people_count=sensor_people_count,
+            raw_risk_score=raw_risk_score,
         )

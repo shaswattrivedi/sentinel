@@ -253,13 +253,15 @@ input {
 }
 
 .stats-heading {
+  font-family: Tahoma, sans-serif;
   font-size: 62px;
-  font-weight: 700;
+  font-weight: 800;
   color: #f8fafc;
   line-height: 1.2;
 }
 
 .use-cases-heading {
+  font-family: Tahoma, sans-serif;
   font-weight: 700;
 }
 

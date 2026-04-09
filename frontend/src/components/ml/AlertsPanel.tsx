@@ -35,26 +35,23 @@ export const AlertsPanel: React.FC<Props> = ({ alerts, loading, fillHeight }) =>
 
   if (safeAlerts.length === 0) {
     return (
-      <div
-        className="glass-card"
-        style={{ ...panelStyle, color: "#f8fafc" }}
-      >
-        No active alerts
+      <div className="glass-card" style={panelStyle}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 9999, border: "1px solid rgba(177, 158, 239, 0.18)", background: "rgba(11, 10, 21, 0.7)", backdropFilter: "blur(20px) saturate(1.4)", WebkitBackdropFilter: "blur(20px) saturate(1.4)", boxShadow: "0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(177, 158, 239, 0.06), inset 0 1px 0 rgba(255,255,255,0.04)", width: "fit-content", color: "#f8fafc", fontSize: 13, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 16 }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--color-critical)", boxShadow: "0 0 8px var(--color-critical)" }} />
+          ALERTS FEED
+        </div>
+
+        <div style={{ display: "grid", placeItems: "center", flex: 1, borderRadius: 12, border: "1px dashed rgba(255, 255, 255, 0.12)", background: "rgba(255,255,255,0.02)", color: "rgba(248, 250, 252, 0.82)", fontWeight: 600 }}>
+          No active alerts
+        </div>
       </div>
     );
   }
 
   return (
     <div className="glass-card" style={panelStyle}>
-      <div
-        style={{
-          color: "rgba(248, 250, 252, 0.5)",
-          fontSize: "11px",
-          textTransform: "uppercase",
-          letterSpacing: "2px",
-          marginBottom: 16
-        }}
-      >
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 9999, border: "1px solid rgba(177, 158, 239, 0.18)", background: "rgba(11, 10, 21, 0.7)", backdropFilter: "blur(20px) saturate(1.4)", WebkitBackdropFilter: "blur(20px) saturate(1.4)", boxShadow: "0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(177, 158, 239, 0.06), inset 0 1px 0 rgba(255,255,255,0.04)", width: "fit-content", color: "#f8fafc", fontSize: 13, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 16 }}>
+        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--color-critical)", boxShadow: "0 0 8px var(--color-critical)" }} />
         ALERTS FEED
       </div>
 
