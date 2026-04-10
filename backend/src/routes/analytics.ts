@@ -6,6 +6,12 @@ import type { TrendStatus, ZoneStatus } from "../models/analyticsSnapshot.js";
 import type { RequestWithUser } from "../middleware/auth.js";
 
 type FilterType = "daily" | "weekly" | "monthly";
+type SourceFilter = "all" | "live" | "seed";
+type ParsedDate = {
+  year: number;
+  month: number;
+  day: number;
+};
 
 type SnapshotPoint = {
   label: string;
@@ -53,20 +59,63 @@ type BucketStats = {
   snapshots: LeanSnapshot[];
 };
 
+type AggregatedDoc = {
+  _id: {
+    hour?: number;
+    year?: number;
+    month?: number;
+    day?: number;
+  };
+  risk_score: number;
+  zone_1_people: number;
+  zone_2_people: number;
+  zone_1_validation: number;
+  zone_2_validation: number;
+  alert_count: number;
+  system_status: ZoneStatus;
+  trend: TrendStatus;
+  count: number;
+};
+
 export const router = Router();
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const LIVE_FRESHNESS_WINDOW_MS = 15 * 60 * 1000;
 
 const isFilterType = (value: string): value is FilterType => value === "daily" || value === "weekly" || value === "monthly";
 
 const toUtcDayStart = (date: Date): Date =>
   new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
 
-const parseDate = (input: unknown): Date => {
-  if (typeof input !== "string" || !input.trim()) return new Date();
-  const parsed = new Date(input);
-  if (!Number.isFinite(parsed.getTime())) throw new HttpError(400, "REQ_400", "Invalid date query parameter");
-  return parsed;
+const parseDateParam = (input: unknown): ParsedDate => {
+  if (typeof input !== "string" || !input.trim()) {
+    const now = new Date();
+    return {
+      year: now.getUTCFullYear(),
+      month: now.getUTCMonth() + 1,
+      day: now.getUTCDate()
+    };
+  }
+
+  const match = input.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    throw new HttpError(400, "REQ_400", "Invalid date query parameter");
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+
+  const parsed = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    throw new HttpError(400, "REQ_400", "Invalid date query parameter");
+  }
+
+  return { year, month, day };
 };
 
 const parseFilter = (input: unknown): FilterType => {
@@ -74,6 +123,12 @@ const parseFilter = (input: unknown): FilterType => {
   const lowered = input.toLowerCase();
   if (!isFilterType(lowered)) throw new HttpError(400, "REQ_400", "Invalid filter query parameter");
   return lowered;
+};
+
+const parseSource = (input: unknown): SourceFilter => {
+  if (typeof input !== "string" || !input.trim()) return "all";
+  const lowered = input.toLowerCase();
+  return lowered === "live" || lowered === "seed" ? lowered : "all";
 };
 
 const avg = (values: number[]): number => {
@@ -120,11 +175,26 @@ const bucketStart = (filter: FilterType, timestamp: Date): Date => {
   return toUtcDayStart(timestamp);
 };
 
-const getRange = (filter: FilterType, date: Date): { start: Date; end: Date } => {
-  const end = new Date(toUtcDayStart(date).getTime() + DAY_MS);
-  const spanDays = filter === "daily" ? 1 : filter === "weekly" ? 7 : 30;
-  const start = new Date(end.getTime() - spanDays * DAY_MS);
-  return { start, end };
+const getRange = (filter: FilterType, parsedDate: ParsedDate): { startDate: Date; endDate: Date } => {
+  const { year, month, day } = parsedDate;
+
+  if (filter === "daily") {
+    const startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+    const endDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59));
+    return { startDate, endDate };
+  }
+
+  if (filter === "weekly") {
+    const endDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59));
+    const startDate = new Date(endDate.getTime() - 6 * DAY_MS);
+    startDate.setUTCHours(0, 0, 0, 0);
+    return { startDate, endDate };
+  }
+
+  const endDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59));
+  const startDate = new Date(endDate.getTime() - 29 * DAY_MS);
+  startDate.setUTCHours(0, 0, 0, 0);
+  return { startDate, endDate };
 };
 
 const buildPoints = (filter: FilterType, docs: LeanSnapshot[]): SnapshotPoint[] => {
@@ -205,12 +275,22 @@ const buildSummary = (data: SnapshotPoint[]): SnapshotSummary => {
   };
 };
 
-const formatDateKey = (date: Date): string => {
-  const yyyy = date.getUTCFullYear();
-  const mm = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(date.getUTCDate()).padStart(2, "0");
+const formatDateKey = (parsedDate: ParsedDate): string => {
+  const yyyy = parsedDate.year;
+  const mm = String(parsedDate.month).padStart(2, "0");
+  const dd = String(parsedDate.day).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 };
+
+const isBaselineLivePoint = (point: SnapshotPoint): boolean =>
+  point.risk_score === 0 &&
+  point.system_status === "SAFE" &&
+  point.zone_1_people === 0 &&
+  point.zone_2_people === 0 &&
+  point.zone_1_validation === 0 &&
+  point.zone_2_validation === 0 &&
+  point.alert_count === 0 &&
+  point.trend === "STABLE";
 
 const generateInsight = (summary: SnapshotSummary, filter: FilterType): string => {
   const peak = summary.peak_time ? new Date(summary.peak_time).toLocaleString() : "N/A";
@@ -235,25 +315,140 @@ const getOrganizationId = (req: RequestWithUser): string => {
   return orgId;
 };
 
-const loadAnalytics = async (organizationId: string, filter: FilterType, date: Date) => {
-  const { start, end } = getRange(filter, date);
-
-  const docs = await AnalyticsSnapshot.find({
+const loadAnalytics = async (
+  organizationId: string,
+  filter: FilterType,
+  sourceFilter: SourceFilter,
+  startDate: Date,
+  endDate: Date,
+  dateKey: string
+) => {
+  const matchStage: Record<string, any> = {
     organizationId,
     timestamp: {
-      $gte: start,
-      $lt: end
+      $gte: startDate,
+      $lte: endDate
     }
-  })
-    .sort({ timestamp: 1 })
-    .lean<LeanSnapshot[]>();
+  };
 
-  const data = buildPoints(filter, docs);
+  if (sourceFilter === "live" || sourceFilter === "seed") {
+    matchStage.dataSource = sourceFilter;
+  }
+
+  if (sourceFilter === "live" && filter === "daily") {
+    const selectedDayStart = Date.UTC(
+      startDate.getUTCFullYear(),
+      startDate.getUTCMonth(),
+      startDate.getUTCDate(),
+      0,
+      0,
+      0,
+      0
+    );
+    const now = new Date();
+    const todayUtcStart = Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      0,
+      0,
+      0,
+      0
+    );
+
+    if (selectedDayStart === todayUtcStart) {
+      const latestLiveDoc = await AnalyticsSnapshot.findOne(matchStage)
+        .sort({ timestamp: -1 })
+        .select({ timestamp: 1 })
+        .lean();
+
+      const latestTs = latestLiveDoc?.timestamp ? new Date(latestLiveDoc.timestamp).getTime() : NaN;
+      const isFresh = Number.isFinite(latestTs) && Date.now() - latestTs <= LIVE_FRESHNESS_WINDOW_MS;
+
+      if (!isFresh) {
+        return {
+          filter,
+          source: sourceFilter,
+          date: dateKey,
+          data: [] as SnapshotPoint[],
+          summary: buildSummary([])
+        };
+      }
+    }
+  }
+
+  const groupId = filter === "daily"
+    ? { hour: { $hour: "$timestamp" } }
+    : {
+        year: { $year: "$timestamp" },
+        month: { $month: "$timestamp" },
+        day: { $dayOfMonth: "$timestamp" }
+      };
+
+  const docs = await AnalyticsSnapshot.aggregate<AggregatedDoc>([
+    { $match: matchStage },
+    { $sort: { timestamp: 1 } },
+    {
+      $group: {
+        _id: groupId,
+        risk_score: { $avg: "$risk_score" },
+        zone_1_people: { $avg: "$zone_1.cam_people_count" },
+        zone_2_people: { $avg: "$zone_2.cam_people_count" },
+        zone_1_validation: { $avg: "$zone_1.validation_score" },
+        zone_2_validation: { $avg: "$zone_2.validation_score" },
+        alert_count: { $sum: "$alert_count" },
+        system_status: { $last: "$system_status" },
+        trend: { $last: "$trend" },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $sort:
+        filter === "daily"
+          ? { "_id.hour": 1 }
+          : { "_id.year": 1, "_id.month": 1, "_id.day": 1 }
+    }
+  ]);
+
+  const data = docs.map((doc): SnapshotPoint => {
+    const label = filter === "daily"
+      ? String(doc._id.hour ?? 0).padStart(2, "0") + ":00"
+      : `${doc._id.year}-${String(doc._id.month).padStart(2, "0")}-${String(doc._id.day).padStart(2, "0")}`;
+
+    const timestamp = filter === "daily"
+      ? new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate(), doc._id.hour ?? 0, 0, 0, 0)).toISOString()
+      : new Date(Date.UTC(doc._id.year ?? 1970, (doc._id.month ?? 1) - 1, doc._id.day ?? 1, 0, 0, 0, 0)).toISOString();
+
+    return {
+      label,
+      timestamp,
+      risk_score: Math.round(doc.risk_score ?? 0),
+      system_status: doc.system_status ?? "SAFE",
+      zone_1_people: Math.round(doc.zone_1_people ?? 0),
+      zone_2_people: Math.round(doc.zone_2_people ?? 0),
+      zone_1_validation: Math.round(doc.zone_1_validation ?? 0),
+      zone_2_validation: Math.round(doc.zone_2_validation ?? 0),
+      alert_count: Math.round(doc.alert_count ?? 0),
+      trend: doc.trend ?? "STABLE"
+    };
+  });
+
+  if (sourceFilter === "live" && data.length > 0 && data.every(isBaselineLivePoint)) {
+    return {
+      filter,
+      source: sourceFilter,
+      date: dateKey,
+      data: [] as SnapshotPoint[],
+      summary: buildSummary([])
+    };
+  }
+
   const summary = buildSummary(data);
 
   return {
     filter,
-    date: formatDateKey(date),
+    source: sourceFilter,
+    date: dateKey,
     data,
     summary
   };
@@ -262,9 +457,49 @@ const loadAnalytics = async (organizationId: string, filter: FilterType, date: D
 router.get("/snapshots", authenticate, async (req: RequestWithUser, res, next) => {
   try {
     const organizationId = getOrganizationId(req);
-    const filter = parseFilter(req.query.filter);
-    const date = parseDate(req.query.date);
-    const payload = await loadAnalytics(organizationId, filter, date);
+    // Parse date param as UTC — never use new Date(dateString) directly
+    const dateParam = (req.query.date as string) ??
+      new Date().toISOString().slice(0, 10);
+
+    const [y, m, d] = dateParam.split('-').map(Number);
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
+      throw new HttpError(400, "REQ_400", "Invalid date query parameter");
+    }
+    // Reference point: end of the selected date in UTC
+    const refMs = Date.UTC(y, m - 1, d, 23, 59, 59, 999);
+
+    let startMs: number;
+    let endMs: number = refMs;
+
+    const filter = (req.query.filter as string) ?? 'daily';
+
+    if (filter === 'daily') {
+      // Full selected day: 00:00:00 to 23:59:59 UTC
+      startMs = Date.UTC(y, m - 1, d, 0, 0, 0, 0);
+    } else if (filter === 'weekly') {
+      // 7-day window ending on selected date
+      startMs = refMs - 6 * 24 * 60 * 60 * 1000;
+      startMs = startMs - (startMs % (24 * 60 * 60 * 1000)); // floor to day
+    } else {
+      // monthly: 30-day window ending on selected date
+      startMs = refMs - 29 * 24 * 60 * 60 * 1000;
+      startMs = startMs - (startMs % (24 * 60 * 60 * 1000)); // floor to day
+    }
+
+    const startDate = new Date(startMs);
+    const endDate   = new Date(endMs);
+
+    const sourceFilter = parseSource(req.query.source);
+    const normalizedFilter = parseFilter(filter);
+
+    const payload = await loadAnalytics(
+      organizationId,
+      normalizedFilter,
+      sourceFilter,
+      startDate,
+      endDate,
+      dateParam
+    );
     return res.json(payload);
   } catch (error) {
     return next(error);
@@ -274,12 +509,53 @@ router.get("/snapshots", authenticate, async (req: RequestWithUser, res, next) =
 router.get("/insight", authenticate, async (req: RequestWithUser, res, next) => {
   try {
     const organizationId = getOrganizationId(req);
-    const filter = parseFilter(req.query.filter);
-    const date = parseDate(req.query.date);
-    const payload = await loadAnalytics(organizationId, filter, date);
+    // Parse date param as UTC — never use new Date(dateString) directly
+    const dateParam = (req.query.date as string) ??
+      new Date().toISOString().slice(0, 10);
+
+    const [y, m, d] = dateParam.split('-').map(Number);
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
+      throw new HttpError(400, "REQ_400", "Invalid date query parameter");
+    }
+    // Reference point: end of the selected date in UTC
+    const refMs = Date.UTC(y, m - 1, d, 23, 59, 59, 999);
+
+    let startMs: number;
+    let endMs: number = refMs;
+
+    const filter = (req.query.filter as string) ?? 'daily';
+
+    if (filter === 'daily') {
+      // Full selected day: 00:00:00 to 23:59:59 UTC
+      startMs = Date.UTC(y, m - 1, d, 0, 0, 0, 0);
+    } else if (filter === 'weekly') {
+      // 7-day window ending on selected date
+      startMs = refMs - 6 * 24 * 60 * 60 * 1000;
+      startMs = startMs - (startMs % (24 * 60 * 60 * 1000)); // floor to day
+    } else {
+      // monthly: 30-day window ending on selected date
+      startMs = refMs - 29 * 24 * 60 * 60 * 1000;
+      startMs = startMs - (startMs % (24 * 60 * 60 * 1000)); // floor to day
+    }
+
+    const startDate = new Date(startMs);
+    const endDate   = new Date(endMs);
+
+    const sourceFilter = parseSource(req.query.source);
+    const normalizedFilter = parseFilter(filter);
+
+    const payload = await loadAnalytics(
+      organizationId,
+      normalizedFilter,
+      sourceFilter,
+      startDate,
+      endDate,
+      dateParam
+    );
 
     return res.json({
       filter: payload.filter,
+      source: payload.source,
       date: payload.date,
       insight: generateInsight(payload.summary, payload.filter)
     });

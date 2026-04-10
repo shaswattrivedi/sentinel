@@ -191,6 +191,29 @@ const Dashboard: React.FC = () => {
               <span style={{ color: "rgba(248, 250, 252, 0.8)", fontSize: 14, fontWeight: 500 }}>{user?.email}</span>
             </div>
 
+            {user?.organizationId === "SENTINELADMINUNIQUE" && (
+              <Link
+                to="/admin"
+                style={{
+                  fontFamily: "var(--font-ui)",
+                  padding: "10px 18px",
+                  borderRadius: 9999,
+                  background: "rgba(127, 29, 29, 0.32)",
+                  border: "1px solid rgba(248, 113, 113, 0.45)",
+                  color: "#fecaca",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  textDecoration: "none",
+                  transition: "all 0.2s",
+                  letterSpacing: 0.4,
+                  textTransform: "uppercase"
+                }}
+              >
+                ● Admin
+              </Link>
+            )}
+
             <Link
               to="/analytics"
               style={{
@@ -383,7 +406,7 @@ const Dashboard: React.FC = () => {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "stretch", height: tabViewportHeight, minHeight: 420, flexShrink: 0 }}>
               {/* LEFT COLUMN */}
               <div style={{ display: "flex", flexDirection: "column", gap: 12, height: "100%", minHeight: 0 }}>
-                <MLInsightsPanel hardware={hardware} loading={isLoading} />
+                <MLInsightsPanel hardware={hardware} timeline={timeline} alerts={alerts} loading={isLoading} />
               </div>
 
               {/* RIGHT COLUMN */}

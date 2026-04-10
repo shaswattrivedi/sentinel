@@ -15,8 +15,10 @@ const Login: React.FC = () => {
     setError(null);
     setSubmitting(true);
     try {
-      await login(email, password);
-      navigate("/dashboard");
+      const profile = await login(email, password);
+      const isAdminAccount =
+        profile?.role === "SUPER_ADMIN" || profile?.organizationId === "SENTINELADMINUNIQUE";
+      navigate(isAdminAccount ? "/admin" : "/dashboard");
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ||
@@ -61,6 +63,9 @@ const Login: React.FC = () => {
         </button>
         <div style={{ marginTop: 20, textAlign: "center", color: "rgba(248, 250, 252, 0.7)" }}>
           Need an account? <Link to="/signup">Sign up</Link>
+        </div>
+        <div style={{ marginTop: 10, textAlign: "center" }}>
+          <Link to="/">-&gt; Back to Home</Link>
         </div>
       </form>
     </div>

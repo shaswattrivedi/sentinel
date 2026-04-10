@@ -1,8 +1,9 @@
 from functools import lru_cache
 import base64
 import json
+from typing import Optional
 
-from fastapi import Request
+from fastapi import Header, Request
 from services.aggregation_service import AggregationService
 from services.ml_service import MLService
 from storage.in_memory import InMemoryStore
@@ -26,8 +27,8 @@ def _decode_token_payload(token: str) -> dict:
         return {}
 
 
-def get_organization_id(request: Request) -> str:
-    explicit_org_id = request.headers.get("x-organization-id", "").strip()
+async def get_org_id(request: Request, x_organization_id: Optional[str] = Header(default=None)) -> str:
+    explicit_org_id = (x_organization_id or "").strip()
     if explicit_org_id:
         return explicit_org_id
 
@@ -40,6 +41,11 @@ def get_organization_id(request: Request) -> str:
             return org_id.strip()
 
     return DEFAULT_ORGANIZATION_ID
+
+
+async def get_organization_id(request: Request, x_organization_id: Optional[str] = Header(default=None)) -> str:
+    """Backward-compatible alias for existing imports."""
+    return await get_org_id(request=request, x_organization_id=x_organization_id)
 
 
 @lru_cache(maxsize=1)

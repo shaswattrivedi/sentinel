@@ -16,6 +16,7 @@ Usage:
     python test_hardware_simulator.py
     python test_hardware_simulator.py --scenario=8
     python test_hardware_simulator.py --scenario=7 --duration=60
+    python test_hardware_simulator.py --scenario=5 --duration=30 --org-id=SYMBIOSIS
 """
 
 import argparse
@@ -34,6 +35,7 @@ import requests
 ML_SERVICE_URL = "http://localhost:8000"
 PREDICT_ENDPOINT = f"{ML_SERVICE_URL}/predict"
 DEFAULT_INTERVAL = 2.0
+DEFAULT_ORG_ID = "default-org"
 
 
 def generate_synthetic_frame(people_count: int) -> str:
@@ -49,9 +51,10 @@ def generate_synthetic_frame(people_count: int) -> str:
 class SensorSimulator:
     """Simulates two super-node zones and POSTs payloads to /predict."""
 
-    def __init__(self, interval: float = DEFAULT_INTERVAL):
+    def __init__(self, interval: float = DEFAULT_INTERVAL, org_id: str = DEFAULT_ORG_ID):
         self.interval = interval
         self.iteration = 0
+        self.org_id = org_id.strip() or DEFAULT_ORG_ID
 
     def _send_reading(
         self,
@@ -79,7 +82,12 @@ class SensorSimulator:
         }
 
         try:
-            response = requests.post(PREDICT_ENDPOINT, json=payload, timeout=5)
+            response = requests.post(
+                PREDICT_ENDPOINT,
+                json=payload,
+                headers={"x-organization-id": self.org_id},
+                timeout=5,
+            )
             response.raise_for_status()
             return response.json()
         except requests.exceptions.ConnectionError:
@@ -267,9 +275,10 @@ def main() -> None:
     parser.add_argument("--scenario", type=int, help="Scenario number (1-8)")
     parser.add_argument("--duration", type=int, default=30, help="Duration in seconds")
     parser.add_argument("--interval", type=float, default=2.0, help="Interval between readings")
+    parser.add_argument("--org-id", type=str, default=DEFAULT_ORG_ID, help="Target organization ID")
     args = parser.parse_args()
 
-    simulator = SensorSimulator(interval=args.interval)
+    simulator = SensorSimulator(interval=args.interval, org_id=args.org_id)
 
     scenarios = {
         1: ("NORMAL", simulator.scenario_normal),

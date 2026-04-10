@@ -5,6 +5,7 @@ export type TrendStatus = "INCREASING" | "STABLE" | "DECREASING";
 
 export interface IAnalyticsSnapshot extends Document {
   organizationId: string;
+  dataSource: "seed" | "live";
   timestamp: Date;
   risk_score: number;
   system_status: ZoneStatus;
@@ -25,6 +26,12 @@ export interface IAnalyticsSnapshot extends Document {
 const AnalyticsSnapshotSchema = new Schema<IAnalyticsSnapshot>(
   {
     organizationId: { type: String, required: true, index: true },
+    dataSource: {
+      type: String,
+      enum: ["seed", "live"],
+      required: true,
+      default: "live"
+    },
     timestamp: { type: Date, required: true, index: true },
     risk_score: { type: Number, required: true },
     system_status: { type: String, enum: ["SAFE", "MODERATE", "CRITICAL"], required: true },
@@ -47,5 +54,7 @@ const AnalyticsSnapshotSchema = new Schema<IAnalyticsSnapshot>(
     versionKey: false
   }
 );
+
+AnalyticsSnapshotSchema.index({ organizationId: 1, dataSource: 1, timestamp: -1 });
 
 export const AnalyticsSnapshot = mongoose.model<IAnalyticsSnapshot>("AnalyticsSnapshot", AnalyticsSnapshotSchema);

@@ -1,6 +1,7 @@
 import { client } from "./client";
 
 export type AnalyticsFilter = "daily" | "weekly" | "monthly";
+export type AnalyticsSource = "all" | "live" | "seed";
 
 export type AnalyticsPoint = {
   label: string;
@@ -26,6 +27,7 @@ export type AnalyticsSummary = {
 
 export type AnalyticsSnapshotsResponse = {
   filter: AnalyticsFilter;
+  source?: AnalyticsSource;
   date: string;
   data: AnalyticsPoint[];
   summary: AnalyticsSummary;
@@ -33,6 +35,7 @@ export type AnalyticsSnapshotsResponse = {
 
 export type AnalyticsInsightResponse = {
   filter: AnalyticsFilter;
+  source?: AnalyticsSource;
   date: string;
   insight: string;
 };
@@ -44,16 +47,24 @@ function unwrapPayload<T>(payload: any): T {
   return payload as T;
 }
 
-export async function fetchAnalyticsSnapshots(filter: AnalyticsFilter, date: string): Promise<AnalyticsSnapshotsResponse> {
+export async function fetchAnalyticsSnapshots(
+  filter: AnalyticsFilter,
+  date: string,
+  source: AnalyticsSource = "all"
+): Promise<AnalyticsSnapshotsResponse> {
   const { data } = await client.get("/analytics/snapshots", {
-    params: { filter, date }
+    params: { filter, date, source }
   });
   return unwrapPayload<AnalyticsSnapshotsResponse>(data);
 }
 
-export async function fetchAnalyticsInsight(filter: AnalyticsFilter, date: string): Promise<AnalyticsInsightResponse> {
+export async function fetchAnalyticsInsight(
+  filter: AnalyticsFilter,
+  date: string,
+  source: AnalyticsSource = "all"
+): Promise<AnalyticsInsightResponse> {
   const { data } = await client.get("/analytics/insight", {
-    params: { filter, date }
+    params: { filter, date, source }
   });
   return unwrapPayload<AnalyticsInsightResponse>(data);
 }

@@ -75,6 +75,9 @@ const Signup: React.FC = () => {
         <div style={{ marginTop: 20, textAlign: "center", color: "rgba(248, 250, 252, 0.7)" }}>
           Already have an account? <Link to="/login">Sign in</Link>
         </div>
+        <div style={{ marginTop: 10, textAlign: "center" }}>
+          <Link to="/">-&gt; Back to Home</Link>
+        </div>
       </form>
     </div>
   );

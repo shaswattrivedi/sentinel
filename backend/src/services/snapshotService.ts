@@ -4,6 +4,7 @@ import type { TrendStatus, ZoneStatus } from "../models/analyticsSnapshot.js";
 import { UserModel } from "../models/user.js";
 
 type MlDashboardSnapshot = {
+  timestamp?: string | Date | null;
   risk_score?: number;
   system_status?: ZoneStatus;
   zone_data?: {
@@ -27,6 +28,7 @@ type MlDashboardSnapshot = {
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:8000";
 const SNAPSHOT_TIMEOUT_MS = 5000;
+const LIVE_FRESHNESS_WINDOW_MS = 15 * 60 * 1000;
 const DEFAULT_ORGANIZATION_ID = "default-org";
 
 const alertCountBufferByOrganization = new Map<string, number>();
@@ -66,11 +68,23 @@ export async function takeSnapshot(): Promise<void> {
         }
       });
 
+      const sourceTimestamp = data.timestamp ? new Date(data.timestamp) : undefined;
+      if (!sourceTimestamp || Number.isNaN(sourceTimestamp.getTime())) {
+        // Skip default/empty dashboard snapshots when hardware has not produced a real update yet.
+        continue;
+      }
+
+      if (Date.now() - sourceTimestamp.getTime() > LIVE_FRESHNESS_WINDOW_MS) {
+        // Do not persist stale snapshots when there is no recent live telemetry update.
+        continue;
+      }
+
       const alertCount = alertCountBufferByOrganization.get(organizationId) ?? 0;
 
       await AnalyticsSnapshot.create({
         organizationId,
-        timestamp: new Date(),
+        dataSource: "live",
+        timestamp: sourceTimestamp,
         risk_score: data.risk_score ?? 0,
         system_status: data.system_status ?? "SAFE",
         zone_1: {

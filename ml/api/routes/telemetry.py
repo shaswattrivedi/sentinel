@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from api.schemas.input import CameraFrameRequest, SensorTelemetryRequest
 from sentinel_ml.vision.people_counter import CameraPeopleCounter
-from utils.deps import get_aggregation_service, get_ml_service, get_organization_id, get_store
+from utils.deps import get_aggregation_service, get_ml_service, get_org_id, get_store
 
 router = APIRouter(prefix="/api/v1/telemetry", tags=["telemetry"])
 
@@ -17,7 +17,7 @@ def get_camera_counter() -> CameraPeopleCounter:
 @router.post("/sensor")
 def ingest_sensor(
     payload: SensorTelemetryRequest,
-    organization_id: str = Depends(get_organization_id),
+    organization_id: str = Depends(get_org_id),
     ml_service=Depends(get_ml_service),
     agg_service=Depends(get_aggregation_service),
 ):
@@ -32,7 +32,7 @@ def ingest_sensor(
 @router.post("/camera")
 def ingest_camera(
     payload: CameraFrameRequest,
-    organization_id: str = Depends(get_organization_id),
+    organization_id: str = Depends(get_org_id),
     store=Depends(get_store),
     counter=Depends(get_camera_counter),
 ):

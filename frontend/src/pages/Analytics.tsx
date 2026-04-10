@@ -19,6 +19,7 @@ import { useAuth } from "@/context/AuthContext";
 import {
   AnalyticsFilter,
   AnalyticsPoint,
+  AnalyticsSource,
   AnalyticsSnapshotsResponse,
   fetchAnalyticsInsight,
   fetchAnalyticsSnapshots
@@ -26,6 +27,11 @@ import {
 import { Skeleton } from "@/components/ml/Skeleton";
 
 const FILTERS: AnalyticsFilter[] = ["daily", "weekly", "monthly"];
+const SOURCES: Array<{ value: AnalyticsSource; label: string; dotColor: string }> = [
+  { value: "all", label: "All Data", dotColor: "#f97316" },
+  { value: "live", label: "Live", dotColor: "#22c55e" },
+  { value: "seed", label: "Demo", dotColor: "#a855f7" }
+];
 
 const chartTickStyle = {
   fill: "#9ca3af",
@@ -217,9 +223,10 @@ function AlertTooltip({ active, payload, label }: any) {
 }
 
 const Analytics: React.FC = () => {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [filter, setFilter] = useState<AnalyticsFilter>("daily");
+  const [source, setSource] = useState<AnalyticsSource>("all");
   const [date, setDate] = useState<string>(today());
   const [snapshots, setSnapshots] = useState<AnalyticsSnapshotsResponse | null>(null);
   const [insight, setInsight] = useState<string>("");
@@ -237,8 +244,8 @@ const Analytics: React.FC = () => {
 
       try {
         const [snapshotPayload, insightPayload] = await Promise.all([
-          fetchAnalyticsSnapshots(filter, date),
-          fetchAnalyticsInsight(filter, date)
+          fetchAnalyticsSnapshots(filter, date, source),
+          fetchAnalyticsInsight(filter, date, source)
         ]);
 
         if (cancelled) return;
@@ -263,7 +270,7 @@ const Analytics: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [date, filter]);
+  }, [date, filter, source]);
 
   const chartData = useMemo(() => snapshots?.data ?? [], [snapshots]);
 
@@ -378,6 +385,64 @@ const Analytics: React.FC = () => {
                 outline: "none"
               }}
             />
+            <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)", margin: "0 4px" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 4, borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 12 }}>
+              {SOURCES.map((option) => {
+                const isActive = source === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setSource(option.value)}
+                    style={
+                      isActive
+                        ? {
+                            ...pillBadgeStyle,
+                            padding: "7px 14px",
+                            fontSize: 12,
+                            letterSpacing: 0.8,
+                            boxShadow: "none"
+                          }
+                        : {
+                            padding: "7px 14px",
+                            borderRadius: 9999,
+                            background: "transparent",
+                            color: "rgba(255,255,255,0.4)",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            letterSpacing: 0.8,
+                            textTransform: "uppercase",
+                            cursor: "pointer",
+                            border: "1px solid transparent",
+                            transition: "all 0.2s",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 8
+                          }
+                    }
+                    onMouseEnter={(e) => {
+                      if (!isActive) e.currentTarget.style.color = "rgba(255,255,255,0.8)";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) e.currentTarget.style.color = "rgba(255,255,255,0.4)";
+                    }}
+                  >
+                    {isActive && (
+                      <span
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          background: option.dotColor,
+                          boxShadow: `0 0 8px ${option.dotColor}`
+                        }}
+                      />
+                    )}
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <Link
             to="/dashboard"
@@ -397,6 +462,29 @@ const Analytics: React.FC = () => {
           >
             Back to Dashboard
           </Link>
+
+          {user?.organizationId === "SENTINELADMINUNIQUE" && (
+            <Link
+              to="/admin"
+              style={{
+                padding: "10px 18px",
+                borderRadius: 9999,
+                background: "rgba(127, 29, 29, 0.32)",
+                border: "1px solid rgba(248, 113, 113, 0.45)",
+                color: "#fecaca",
+                cursor: "pointer",
+                fontWeight: 700,
+                fontSize: 13,
+                textDecoration: "none",
+                transition: "all 0.2s",
+                fontFamily: "var(--font-ui)",
+                letterSpacing: 0.4,
+                textTransform: "uppercase"
+              }}
+            >
+              ● Admin
+            </Link>
+          )}
         </div>
       </motion.header>
 

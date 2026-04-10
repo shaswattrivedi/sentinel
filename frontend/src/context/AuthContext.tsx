@@ -5,13 +5,14 @@ type User = {
   id: string;
   email: string;
   role: string;
+  organizationId: string;
 };
 
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, organizationId: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User | null>;
+  signup: (email: string, password: string, organizationId: string) => Promise<User | null>;
   logout: () => void;
 };
 
@@ -61,7 +62,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { access_token, refresh_token, user: profile } = res.data?.data ?? {};
     if (access_token) localStorage.setItem(ACCESS_TOKEN_KEY, access_token);
     if (refresh_token) localStorage.setItem(REFRESH_TOKEN_KEY, refresh_token);
-    setUser(profile ?? null);
+    const normalizedProfile = profile ?? null;
+    setUser(normalizedProfile);
+    return normalizedProfile;
   }, []);
 
   const signup = useCallback(async (email: string, password: string, organizationId: string) => {
@@ -69,7 +72,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { access_token, refresh_token, user: profile } = res.data?.data ?? {};
     if (access_token) localStorage.setItem(ACCESS_TOKEN_KEY, access_token);
     if (refresh_token) localStorage.setItem(REFRESH_TOKEN_KEY, refresh_token);
-    setUser(profile ?? null);
+    const normalizedProfile = profile ?? null;
+    setUser(normalizedProfile);
+    return normalizedProfile;
   }, []);
 
   const logout = useCallback(() => {

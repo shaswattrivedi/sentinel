@@ -6,6 +6,7 @@ import { UserRole } from "../types/users.js";
 // Policy matrix per action.
 const policy: Record<string, UserRole[]> = {
   "users:admin": [UserRole.SUPER_ADMIN],
+  "admin:simulate": [UserRole.SUPER_ADMIN],
   "sensors:read": [UserRole.SUPER_ADMIN, UserRole.BUILDING_ADMIN],
   "sensors:manage": [UserRole.SUPER_ADMIN, UserRole.BUILDING_ADMIN],
   "risk:read": [UserRole.SUPER_ADMIN, UserRole.BUILDING_ADMIN, UserRole.SAFETY_OFFICER, UserRole.VIEW_ONLY],
