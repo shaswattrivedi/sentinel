@@ -50,7 +50,7 @@ const AboutUs: React.FC = () => {
   /* ── Passive scroll sync (fallback while not animating) ── */
   useEffect(() => {
     const onScroll = () => {
-      if (!sectionRef.current || isAnimating.current) return;
+      if (!sectionRef.current) return;
 
       const rect = sectionRef.current.getBoundingClientRect();
       const vh = window.innerHeight;
@@ -58,14 +58,15 @@ const AboutUs: React.FC = () => {
 
       setSectionActive(inZone);
 
-      if (inZone) {
-        const scrolled = Math.max(0, -rect.top);
-        const panel = Math.min(
-          PANEL_COUNT - 1,
-          Math.max(0, Math.round(scrolled / vh))
-        );
-        setActivePanel(panel);
-      }
+      // Keep overlay visibility in sync with viewport even during transition lock.
+      if (!inZone || isAnimating.current) return;
+
+      const scrolled = Math.max(0, -rect.top);
+      const panel = Math.min(
+        PANEL_COUNT - 1,
+        Math.max(0, Math.round(scrolled / vh))
+      );
+      setActivePanel(panel);
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -74,16 +75,27 @@ const AboutUs: React.FC = () => {
 
   /* ── Wheel handler with approach-zone entry/exit ── */
   const handleWheel = useCallback((e: WheelEvent) => {
-    if (!sectionRef.current || isAnimating.current) return;
+    if (!sectionRef.current) return;
     if (Math.abs(e.deltaY) < 3) return; // ignore micro-inertia
 
     const rect = sectionRef.current.getBoundingClientRect();
     const vh = window.innerHeight;
     const dir = e.deltaY > 0 ? 1 : -1;
     const sTop = window.scrollY + rect.top;
+    const inZone = rect.top <= 2 && rect.bottom >= vh - 2;
+    const nearAbove = dir === 1 && rect.top > -5 && rect.top < vh * 0.35;
+    const nearBelow = dir === -1 && rect.bottom > vh * 0.65 && rect.bottom < vh + 5;
+
+    if (isAnimating.current) {
+      // Swallow wheel bursts while transition is active to prevent panel/section desync.
+      if (inZone || nearAbove || nearBelow) {
+        e.preventDefault();
+      }
+      return;
+    }
 
     /* ── APPROACH from above (scrolling ↓): snap to Panel 0 ── */
-    if (dir === 1 && rect.top > -5 && rect.top < vh * 0.35) {
+    if (nearAbove) {
       e.preventDefault();
       isAnimating.current = true;
       setActivePanel(0);
@@ -94,7 +106,7 @@ const AboutUs: React.FC = () => {
     }
 
     /* ── APPROACH from below (scrolling ↑): snap to last Panel ── */
-    if (dir === -1 && rect.bottom > vh * 0.65 && rect.bottom < vh + 5) {
+    if (nearBelow) {
       e.preventDefault();
       isAnimating.current = true;
       const last = PANEL_COUNT - 1;
@@ -106,7 +118,6 @@ const AboutUs: React.FC = () => {
     }
 
     /* ── ACTIVE ZONE: section fills the viewport ── */
-    const inZone = rect.top <= 2 && rect.bottom >= vh - 2;
     if (!inZone) return;
 
     e.preventDefault();
