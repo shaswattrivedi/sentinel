@@ -53,3 +53,10 @@ coverage/
 
 # ML model weights
 ml/sentinel_ml/vision/models/*.pt
+
+# Temporary one-off AI/manual patch scripts
+fix_*.py
+fix_*.ts
+update_*.py
+update_*.ts
+write_fixes.py

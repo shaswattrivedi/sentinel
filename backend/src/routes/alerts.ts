@@ -4,17 +4,32 @@ import { requirePolicy } from "../middleware/rbac.js";
 import { success } from "../utils/response.js";
 import { alertService } from "../services/alertService.js";
 import { HttpError } from "../middleware/errorHandler.js";
+import { RequestWithUser } from "../middleware/auth.js";
 
 export const router = Router();
 
-router.get("/", authenticate, requirePolicy("alerts:read"), (req, res) => {
-  const alerts = alertService.list();
-  return res.json(success(req, { alerts }));
+const getOrganizationId = (req: RequestWithUser): string => {
+  const orgId = req.user?.organizationId?.trim();
+  if (!orgId) {
+    throw new HttpError(401, "AUTH_401", "Organization context missing");
+  }
+  return orgId;
+};
+
+router.get("/", authenticate, requirePolicy("alerts:read"), (req: RequestWithUser, res, next) => {
+  try {
+    const organizationId = getOrganizationId(req);
+    const alerts = alertService.list(organizationId);
+    return res.json(success(req, { alerts }));
+  } catch (error) {
+    return next(error);
+  }
 });
 
-router.post("/:id/acknowledge", authenticate, requirePolicy("alerts:ack"), (req, res, next) => {
+router.post("/:id/acknowledge", authenticate, requirePolicy("alerts:ack"), (req: RequestWithUser, res, next) => {
   try {
-    const alert = alertService.acknowledge(req.params.id);
+    const organizationId = getOrganizationId(req);
+    const alert = alertService.acknowledge(req.params.id, organizationId);
     return res.json(success(req, { alert }));
   } catch (error) {
     if (error instanceof HttpError) return next(error);

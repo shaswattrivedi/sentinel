@@ -82,54 +82,66 @@ async function seed() {
   });
   await AnalyticsSnapshot.deleteMany({});
 
+  const organizationIds = (process.env.SEED_ORG_IDS ?? "org_1,org_2")
+    .split(",")
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0);
+  const targetOrganizations = organizationIds.length > 0 ? organizationIds : ["default-org"];
+
   const dayMultipliers = [1.1, 0.9, 0.85, 1.0, 1.15, 1.2, 0.95];
-  const docs = [];
+  const docs: Record<string, unknown>[] = [];
   const now = new Date();
-  let prevRisk = 10;
 
-  for (let d = 6; d >= 0; d -= 1) {
-    const dayMult = dayMultipliers[6 - d];
-    const date = new Date(now);
-    date.setDate(date.getDate() - d);
-    date.setHours(0, 0, 0, 0);
+  for (let orgIndex = 0; orgIndex < targetOrganizations.length; orgIndex += 1) {
+    const organizationId = targetOrganizations[orgIndex];
+    const orgVariance = 0.9 + orgIndex * 0.12;
+    let prevRisk = 10 + orgIndex * 3;
 
-    for (let h = 0; h < 24; h += 1) {
-      for (let m = 0; m < 60; m += 5) {
-        const ts = new Date(date);
-        ts.setHours(h, m, 0, 0);
+    for (let d = 6; d >= 0; d -= 1) {
+      const dayMult = dayMultipliers[6 - d];
+      const date = new Date(now);
+      date.setDate(date.getDate() - d);
+      date.setHours(0, 0, 0, 0);
 
-        const risk = getRiskForHour(h, dayMult);
-        const z1People = getPeopleForRisk(risk * 0.9);
-        const z2People = getPeopleForRisk(risk * 1.1);
-        const z1Val = clamp(noise(risk * 0.85), 0, 100);
-        const z2Val = clamp(noise(risk * 0.95), 0, 100);
-        const alerts = getStatus(risk) === "CRITICAL" ? Math.floor(Math.random() * 4) + 1 : 0;
+      for (let h = 0; h < 24; h += 1) {
+        for (let m = 0; m < 60; m += 5) {
+          const ts = new Date(date);
+          ts.setHours(h, m, 0, 0);
 
-        docs.push({
-          timestamp: ts,
-          risk_score: Math.round(risk),
-          system_status: getStatus(risk),
-          zone_1: {
-            cam_people_count: z1People,
-            validation_score: Math.round(z1Val),
-            zone_status: getStatus(z1Val)
-          },
-          zone_2: {
-            cam_people_count: z2People,
-            validation_score: Math.round(z2Val),
-            zone_status: getStatus(z2Val)
-          },
-          trend: getTrend(prevRisk, risk),
-          alert_count: alerts
-        });
+          const risk = getRiskForHour(h, dayMult * orgVariance);
+          const z1People = getPeopleForRisk(risk * 0.9);
+          const z2People = getPeopleForRisk(risk * 1.1);
+          const z1Val = clamp(noise(risk * 0.85), 0, 100);
+          const z2Val = clamp(noise(risk * 0.95), 0, 100);
+          const alerts = getStatus(risk) === "CRITICAL" ? Math.floor(Math.random() * 4) + 1 : 0;
 
-        prevRisk = risk;
+          docs.push({
+            organizationId,
+            timestamp: ts,
+            risk_score: Math.round(risk),
+            system_status: getStatus(risk),
+            zone_1: {
+              cam_people_count: z1People,
+              validation_score: Math.round(z1Val),
+              zone_status: getStatus(z1Val)
+            },
+            zone_2: {
+              cam_people_count: z2People,
+              validation_score: Math.round(z2Val),
+              zone_status: getStatus(z2Val)
+            },
+            trend: getTrend(prevRisk, risk),
+            alert_count: alerts
+          });
+
+          prevRisk = risk;
+        }
       }
     }
   }
 
   await AnalyticsSnapshot.insertMany(docs);
-  console.log(`[Seed] Inserted ${docs.length} snapshots across 7 days`);
+  console.log(`[Seed] Inserted ${docs.length} snapshots across 7 days for ${targetOrganizations.length} organization(s)`);
   await mongoose.disconnect();
 }
 

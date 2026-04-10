@@ -12,7 +12,7 @@ import { ZoneMapPanel } from "@/components/ml/ZoneMapPanel";
 import { CombinedRiskDensityCard } from "@/components/ml/CombinedRiskDensityCard";
 import { resetDashboardState } from "@/api/dashboard";
 
-type TabType = "OVERVIEW" | "ANALYTICS" | "OPERATIONS";
+type TabType = "OVERVIEW" | "TELEMETRY" | "OPERATIONS";
 
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -78,7 +78,7 @@ const Dashboard: React.FC = () => {
 
   const tabs: Array<{ id: TabType; label: string; dotColor: string }> = [
     { id: "OVERVIEW", label: "OVERVIEW", dotColor: "var(--color-critical)" },
-    { id: "ANALYTICS", label: "ANALYTICS", dotColor: "var(--color-warning)" },
+    { id: "TELEMETRY", label: "TELEMETRY", dotColor: "var(--color-warning)" },
     { id: "OPERATIONS", label: "OPERATIONS", dotColor: "var(--color-safe)" }
   ];
 
@@ -366,7 +366,7 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {activeTab === "ANALYTICS" && (
+        {activeTab === "TELEMETRY" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
             <div style={{ height: tabViewportHeight, minHeight: 420, display: "flex", flexShrink: 0 }}>
               <RiskTimelineChart data={timeline} loading={isLoading} />

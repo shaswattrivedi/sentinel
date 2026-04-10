@@ -3,6 +3,7 @@ import { authenticate } from "../middleware/auth.js";
 import { HttpError } from "../middleware/errorHandler.js";
 import { AnalyticsSnapshot } from "../models/analyticsSnapshot.js";
 import type { TrendStatus, ZoneStatus } from "../models/analyticsSnapshot.js";
+import type { RequestWithUser } from "../middleware/auth.js";
 
 type FilterType = "daily" | "weekly" | "monthly";
 
@@ -226,10 +227,19 @@ const generateInsight = (summary: SnapshotSummary, filter: FilterType): string =
   );
 };
 
-const loadAnalytics = async (filter: FilterType, date: Date, req: any) => {
+const getOrganizationId = (req: RequestWithUser): string => {
+  const orgId = req.user?.organizationId?.trim();
+  if (!orgId) {
+    throw new HttpError(401, "AUTH_401", "Organization context missing");
+  }
+  return orgId;
+};
+
+const loadAnalytics = async (organizationId: string, filter: FilterType, date: Date) => {
   const { start, end } = getRange(filter, date);
 
-  const docs = await AnalyticsSnapshot.find({ organizationId: req.user?.organizationId, 
+  const docs = await AnalyticsSnapshot.find({
+    organizationId,
     timestamp: {
       $gte: start,
       $lt: end
@@ -249,22 +259,24 @@ const loadAnalytics = async (filter: FilterType, date: Date, req: any) => {
   };
 };
 
-router.get("/snapshots", authenticate, async (req, res, next) => {
+router.get("/snapshots", authenticate, async (req: RequestWithUser, res, next) => {
   try {
+    const organizationId = getOrganizationId(req);
     const filter = parseFilter(req.query.filter);
     const date = parseDate(req.query.date);
-    const payload = await loadAnalytics(filter, date, req);
+    const payload = await loadAnalytics(organizationId, filter, date);
     return res.json(payload);
   } catch (error) {
     return next(error);
   }
 });
 
-router.get("/insight", authenticate, async (req, res, next) => {
+router.get("/insight", authenticate, async (req: RequestWithUser, res, next) => {
   try {
+    const organizationId = getOrganizationId(req);
     const filter = parseFilter(req.query.filter);
     const date = parseDate(req.query.date);
-    const payload = await loadAnalytics(filter, date, req);
+    const payload = await loadAnalytics(organizationId, filter, date);
 
     return res.json({
       filter: payload.filter,

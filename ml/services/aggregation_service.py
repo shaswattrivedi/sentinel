@@ -34,18 +34,19 @@ class AggregationService:
             "CRITICAL": "EVACUATE",
         }
 
-    def ingest(self, output: IntelligenceOutput) -> None:
-        self.store.add_output(output)
+    def ingest(self, output: IntelligenceOutput, organization_id: str) -> None:
+        self.store.add_output(output, organization_id=organization_id)
 
-    def _latest(self):
-        if not self.store.outputs:
+    def _latest(self, organization_id: str):
+        recent = self.store.get_recent_outputs(organization_id, limit=1)
+        if not recent:
             return None
 
-        return self.store.outputs[-1]
+        return recent[-1]
 
 
-    def overview(self) -> dict:
-        latest = self._latest()
+    def overview(self, organization_id: str) -> dict:
+        latest = self._latest(organization_id)
         if latest is None:
             return {
                 "timestamp": None,
@@ -75,9 +76,9 @@ class AggregationService:
         }
 
  
-    def timeline(self, limit: int = 200) -> List[dict]:
+    def timeline(self, organization_id: str, limit: int = 200) -> List[dict]:
         points = []
-        for o in self.store.get_recent_outputs(limit=limit):
+        for o in self.store.get_recent_outputs(organization_id, limit=limit):
             raw_risk_score = getattr(o, "raw_risk_score", None)
             resolved_risk_score = float(raw_risk_score) if raw_risk_score is not None else self.risk_score_map.get(o.risk_level, 0.0)
             points.append(
@@ -90,8 +91,8 @@ class AggregationService:
             )
         return points
 
-    def flow(self, limit: int = 50) -> List[dict]:
-        outputs = self.store.get_recent_outputs(limit=limit + 1)
+    def flow(self, organization_id: str, limit: int = 50) -> List[dict]:
+        outputs = self.store.get_recent_outputs(organization_id, limit=limit + 1)
         if len(outputs) < 2:
             return []
             
@@ -111,13 +112,13 @@ class AggregationService:
             })
         return flow_points
 
-    def alerts(self, limit: int = 50) -> List[dict]:
-        alert_outputs = self.store.get_recent_alerts(limit=limit)
+    def alerts(self, organization_id: str, limit: int = 50) -> List[dict]:
+        alert_outputs = self.store.get_recent_alerts(organization_id, limit=limit)
         source_outputs = alert_outputs
 
         # Keep alerts feed informative even when there are no elevated events yet.
         if not source_outputs:
-            source_outputs = self.store.get_recent_outputs(limit=min(limit, 10))
+            source_outputs = self.store.get_recent_outputs(organization_id, limit=min(limit, 10))
 
         return [
             {
@@ -129,8 +130,8 @@ class AggregationService:
             for output in source_outputs
         ]
 
-    def decision(self) -> dict:
-        latest = self._latest()
+    def decision(self, organization_id: str) -> dict:
+        latest = self._latest(organization_id)
         if latest is None:
             return {
                 "timestamp": None,
@@ -149,11 +150,12 @@ class AggregationService:
         }
 
 
-    def health(self) -> dict:
+    def health(self, organization_id: str) -> dict:
+        has_outputs = len(self.store.get_recent_outputs(organization_id, limit=1)) > 0
         return {
-            "status": "ok" if self.store.outputs else "waiting",
+            "status": "ok" if has_outputs else "waiting",
             "ml_pipeline": "ok",
-            "last_inference": self.store.last_inference,
+            "last_inference": self.store.get_last_inference(organization_id),
         }
 
 

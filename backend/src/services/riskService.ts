@@ -10,13 +10,22 @@ export interface RiskEvent {
   reason: string;
 }
 
+const DEFAULT_ORGANIZATION_ID = "default-org";
+
 const riskOrder: Record<RiskState, number> = {
   SAFE: 0,
   WARNING: 1,
   DANGER: 2
 };
 
-const events: RiskEvent[] = [
+const eventsByOrganization = new Map<string, RiskEvent[]>();
+
+const normalizeOrganizationId = (organizationId: string | undefined): string => {
+  const normalized = organizationId?.trim();
+  return normalized && normalized.length > 0 ? normalized : DEFAULT_ORGANIZATION_ID;
+};
+
+const buildInitialEvents = (): RiskEvent[] => [
   {
     timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
     zoneId: "zone-1",
@@ -33,31 +42,44 @@ const events: RiskEvent[] = [
   }
 ];
 
-const sortEventsDesc = () => {
+const getOrganizationEvents = (organizationId: string): RiskEvent[] => {
+  const orgId = normalizeOrganizationId(organizationId);
+  let events = eventsByOrganization.get(orgId);
+  if (!events) {
+    events = buildInitialEvents();
+    eventsByOrganization.set(orgId, events);
+  }
+  return events;
+};
+
+const sortEventsDesc = (events: RiskEvent[]) => {
   events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 };
 
 export const riskService = {
-  addEvent(event: RiskEvent): RiskEvent {
+  addEvent(organizationId: string, event: RiskEvent): RiskEvent {
+    const events = getOrganizationEvents(organizationId);
     events.push(event);
-    sortEventsDesc();
+    sortEventsDesc(events);
 
     const previous = events.find((e) => e.zoneId === event.zoneId && e.timestamp < event.timestamp);
     if (previous && riskOrder[event.riskState] > riskOrder[previous.riskState]) {
-      alertService.triggerRiskEscalation(event, previous);
+      alertService.triggerRiskEscalation(event, previous, organizationId);
     }
 
     return event;
   },
 
-  getCurrent(zoneId?: string): RiskEvent | undefined {
-    sortEventsDesc();
+  getCurrent(organizationId: string, zoneId?: string): RiskEvent | undefined {
+    const events = getOrganizationEvents(organizationId);
+    sortEventsDesc(events);
     if (!zoneId) return events[0];
     return events.find((e) => e.zoneId === zoneId);
   },
 
-  getTimeline(start?: Date, end?: Date): RiskEvent[] {
-    sortEventsDesc();
+  getTimeline(organizationId: string, start?: Date, end?: Date): RiskEvent[] {
+    const events = getOrganizationEvents(organizationId);
+    sortEventsDesc(events);
     return events
       .filter((e) => {
         const ts = new Date(e.timestamp).getTime();

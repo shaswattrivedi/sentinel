@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 import re
 import time
@@ -7,22 +8,73 @@ from urllib.parse import urlparse
 import cv2
 import numpy as np
 import requests
+from dotenv import load_dotenv
 from ultralytics import YOLO
 
-# Hardware stream URLs
-ZONE_STREAM_URLS = {
+load_dotenv()
+
+# Fallback defaults if env variables are not present.
+DEFAULT_ZONE_STREAM_URLS = {
     "zone-1": "http://10.191.109.209:81/stream",
     "zone-2": "http://10.191.109.26:81/stream",
 }
 
 # Dedicated sensor endpoints/IPs (separate from camera ESP32-CAM hosts)
-ZONE_SENSOR_ENDPOINTS = {
+DEFAULT_ZONE_SENSOR_ENDPOINTS = {
     "zone-1": "10.191.109.43",
     "zone-2": "10.191.109.130",
 }
 
-ML_SERVICE_URL = "http://localhost:8000/predict"
+DEFAULT_ML_SERVICE_URL = "http://localhost:8000/predict"
 model = YOLO("yolov8n.pt")
+
+
+def _parse_zone_mapping(raw_value: str | None, fallback: dict[str, str], var_name: str) -> dict[str, str]:
+    """
+    Parse zone mapping from env in either of these formats:
+    - CSV key/value pairs: zone-1=http://...,zone-2=http://...
+    - JSON object: {"zone-1": "http://...", "zone-2": "http://..."}
+    """
+    if raw_value is None or not raw_value.strip():
+        return dict(fallback)
+
+    raw = raw_value.strip()
+
+    if raw.startswith("{"):
+        try:
+            decoded = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"{var_name} has invalid JSON format") from exc
+
+        if not isinstance(decoded, dict):
+            raise ValueError(f"{var_name} JSON value must be an object")
+
+        parsed = {str(k).strip(): str(v).strip() for k, v in decoded.items()}
+        parsed = {k: v for k, v in parsed.items() if k and v}
+        if not parsed:
+            raise ValueError(f"{var_name} JSON object is empty")
+        return parsed
+
+    parsed: dict[str, str] = {}
+    for item in raw.split(","):
+        pair = item.strip()
+        if not pair:
+            continue
+        if "=" not in pair:
+            raise ValueError(
+                f"{var_name} must use 'zone=value' pairs separated by commas. Invalid item: '{pair}'"
+            )
+        zone_id, value = pair.split("=", 1)
+        zone_id = zone_id.strip()
+        value = value.strip()
+        if not zone_id or not value:
+            raise ValueError(f"{var_name} contains an empty zone or value in '{pair}'")
+        parsed[zone_id] = value
+
+    if not parsed:
+        raise ValueError(f"{var_name} did not contain any valid zone mappings")
+
+    return parsed
 
 
 def _extract_float(text: str) -> float | None:
@@ -134,16 +186,30 @@ def count_and_annotate(frame: np.ndarray) -> tuple[int, float, str]:
 
 
 def run_loop() -> None:
-    ml_service_url = os.getenv("ML_SERVICE_URL", ML_SERVICE_URL)
+    zone_stream_urls = _parse_zone_mapping(
+        os.getenv("ZONE_STREAM_URLS"),
+        DEFAULT_ZONE_STREAM_URLS,
+        "ZONE_STREAM_URLS",
+    )
+    zone_sensor_endpoints = _parse_zone_mapping(
+        os.getenv("ZONE_SENSOR_ENDPOINTS"),
+        DEFAULT_ZONE_SENSOR_ENDPOINTS,
+        "ZONE_SENSOR_ENDPOINTS",
+    )
+    ml_service_url = os.getenv("ML_SERVICE_URL", DEFAULT_ML_SERVICE_URL)
+
     print("[SENTINEL] Starting hardware live loop...")
     print(f"[SENTINEL] ML endpoint: {ml_service_url}")
+    print(f"[SENTINEL] Zone streams: {zone_stream_urls}")
+    print(f"[SENTINEL] Zone sensors: {zone_sensor_endpoints}")
+
     while True:
         payload = {"timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")}
         annotated_frames = {}
 
-        for zone_id, stream_url in ZONE_STREAM_URLS.items():
-            sensor_endpoint = ZONE_SENSOR_ENDPOINTS.get(zone_id, "")
-            frame = _frame(stream_url)
+        for zone_id, stream_url in zone_stream_urls.items():
+            sensor_endpoint = zone_sensor_endpoints.get(zone_id, "")
+            frame = grab_frame(stream_url)
             validation_score = get_validation_score(sensor_endpoint, zone_id)
 
             if frame is not None:

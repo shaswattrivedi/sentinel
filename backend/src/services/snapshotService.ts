@@ -1,6 +1,7 @@
 import axios from "axios";
 import { AnalyticsSnapshot } from "../models/analyticsSnapshot.js";
 import type { TrendStatus, ZoneStatus } from "../models/analyticsSnapshot.js";
+import { UserModel } from "../models/user.js";
 
 type MlDashboardSnapshot = {
   risk_score?: number;
@@ -26,47 +27,75 @@ type MlDashboardSnapshot = {
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:8000";
 const SNAPSHOT_TIMEOUT_MS = 5000;
+const DEFAULT_ORGANIZATION_ID = "default-org";
 
-let alertCountBuffer = 0;
+const alertCountBufferByOrganization = new Map<string, number>();
 let schedulerId: NodeJS.Timeout | null = null;
 let mlUnavailable = false;
 
-export function incrementAlertCount() {
-  alertCountBuffer += 1;
+const normalizeOrganizationId = (organizationId: string | undefined): string => {
+  const normalized = organizationId?.trim();
+  return normalized && normalized.length > 0 ? normalized : DEFAULT_ORGANIZATION_ID;
+};
+
+const getKnownOrganizationIds = async (): Promise<string[]> => {
+  const organizationIds = await UserModel.distinct("organizationId");
+  const normalized = organizationIds
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+
+  return normalized.length > 0 ? Array.from(new Set(normalized)) : [DEFAULT_ORGANIZATION_ID];
+};
+
+export function incrementAlertCount(organizationId: string) {
+  const orgId = normalizeOrganizationId(organizationId);
+  const previous = alertCountBufferByOrganization.get(orgId) ?? 0;
+  alertCountBufferByOrganization.set(orgId, previous + 1);
 }
 
 export async function takeSnapshot(): Promise<void> {
   try {
-    const { data } = await axios.get<MlDashboardSnapshot>(`${ML_SERVICE_URL}/dashboard/snapshot`, {
-      timeout: SNAPSHOT_TIMEOUT_MS
-    });
+    const organizationIds = await getKnownOrganizationIds();
 
-    await AnalyticsSnapshot.create({
-      organizationId: "org_1", // Default org for live snapshots
-      timestamp: new Date(),
-      risk_score: data.risk_score ?? 0,
-      system_status: data.system_status ?? "SAFE",
-      zone_1: {
-        cam_people_count: data.zone_data?.["zone-1"]?.cam_people_count ?? 0,
-        validation_score: data.zone_data?.["zone-1"]?.validation_score ?? 0,
-        zone_status: data.zone_status?.["zone-1"] ?? "SAFE"
-      },
-      zone_2: {
-        cam_people_count: data.zone_data?.["zone-2"]?.cam_people_count ?? 0,
-        validation_score: data.zone_data?.["zone-2"]?.validation_score ?? 0,
-        zone_status: data.zone_status?.["zone-2"] ?? "SAFE"
-      },
-      trend: data.trend_prediction?.trend ?? "STABLE",
-      alert_count: alertCountBuffer
-    });
+    for (const organizationId of organizationIds) {
+      const { data } = await axios.get<MlDashboardSnapshot>(`${ML_SERVICE_URL}/dashboard/snapshot`, {
+        timeout: SNAPSHOT_TIMEOUT_MS,
+        headers: {
+          "x-organization-id": organizationId
+        }
+      });
+
+      const alertCount = alertCountBufferByOrganization.get(organizationId) ?? 0;
+
+      await AnalyticsSnapshot.create({
+        organizationId,
+        timestamp: new Date(),
+        risk_score: data.risk_score ?? 0,
+        system_status: data.system_status ?? "SAFE",
+        zone_1: {
+          cam_people_count: data.zone_data?.["zone-1"]?.cam_people_count ?? 0,
+          validation_score: data.zone_data?.["zone-1"]?.validation_score ?? 0,
+          zone_status: data.zone_status?.["zone-1"] ?? "SAFE"
+        },
+        zone_2: {
+          cam_people_count: data.zone_data?.["zone-2"]?.cam_people_count ?? 0,
+          validation_score: data.zone_data?.["zone-2"]?.validation_score ?? 0,
+          zone_status: data.zone_status?.["zone-2"] ?? "SAFE"
+        },
+        trend: data.trend_prediction?.trend ?? "STABLE",
+        alert_count: alertCount
+      });
+
+      alertCountBufferByOrganization.set(organizationId, 0);
+    }
 
     if (mlUnavailable) {
       console.log("[Snapshot] ML service connection restored");
       mlUnavailable = false;
     }
 
-    alertCountBuffer = 0;
-    console.log("[Snapshot] Saved at", new Date().toISOString());
+    console.log(`[Snapshot] Saved at ${new Date().toISOString()} for ${organizationIds.length} organization(s)`);
   } catch (err) {
     if (axios.isAxiosError(err)) {
       const code = err.code ?? "UNKNOWN";

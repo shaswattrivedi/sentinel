@@ -35,16 +35,42 @@ class HardwareStatus:
 @dataclass
 class InMemoryStore:
     max_points: int = 500
-    outputs: Deque[IntelligenceOutput] = field(default_factory=lambda: deque(maxlen=500))
-    alerts: Deque[IntelligenceOutput] = field(default_factory=lambda: deque(maxlen=200))
-    last_inference: Optional[datetime] = None
-    hardware_status: HardwareStatus = field(default_factory=HardwareStatus)
+    alerts_max_points: int = 200
+    outputs_by_organization: Dict[str, Deque[IntelligenceOutput]] = field(default_factory=dict)
+    alerts_by_organization: Dict[str, Deque[IntelligenceOutput]] = field(default_factory=dict)
+    last_inference_by_organization: Dict[str, datetime] = field(default_factory=dict)
+    hardware_status_by_organization: Dict[str, HardwareStatus] = field(default_factory=dict)
 
-    def add_output(self, output: IntelligenceOutput) -> None:
-        self.outputs.append(output)
-        self.last_inference = output.timestamp
+    def _normalize_org(self, organization_id: Optional[str]) -> str:
+        org_id = (organization_id or "").strip()
+        return org_id if org_id else "default-org"
+
+    def _get_outputs_queue(self, organization_id: Optional[str]) -> Deque[IntelligenceOutput]:
+        org_id = self._normalize_org(organization_id)
+        if org_id not in self.outputs_by_organization:
+            self.outputs_by_organization[org_id] = deque(maxlen=self.max_points)
+        return self.outputs_by_organization[org_id]
+
+    def _get_alerts_queue(self, organization_id: Optional[str]) -> Deque[IntelligenceOutput]:
+        org_id = self._normalize_org(organization_id)
+        if org_id not in self.alerts_by_organization:
+            self.alerts_by_organization[org_id] = deque(maxlen=self.alerts_max_points)
+        return self.alerts_by_organization[org_id]
+
+    def get_hardware_status(self, organization_id: Optional[str]) -> HardwareStatus:
+        org_id = self._normalize_org(organization_id)
+        if org_id not in self.hardware_status_by_organization:
+            self.hardware_status_by_organization[org_id] = HardwareStatus()
+        return self.hardware_status_by_organization[org_id]
+
+    def add_output(self, output: IntelligenceOutput, organization_id: Optional[str] = None) -> None:
+        org_id = self._normalize_org(organization_id)
+        outputs = self._get_outputs_queue(org_id)
+        outputs.append(output)
+        self.last_inference_by_organization[org_id] = output.timestamp
         if output.alert_status:
-            self.alerts.append(output)
+            alerts = self._get_alerts_queue(org_id)
+            alerts.append(output)
 
     def update_hardware_status(
         self,
@@ -56,35 +82,53 @@ class InMemoryStore:
         trend_prediction: Dict[str, Any],
         alerts: List[Dict[str, Any]],
         timestamp: datetime,
+        organization_id: Optional[str] = None,
     ) -> None:
-        self.hardware_status.risk_score = risk_score
-        self.hardware_status.system_status = system_status
-        self.hardware_status.zone_status = zone_status
-        self.hardware_status.zone_data = zone_data
-        self.hardware_status.annotated_frames = annotated_frames
-        self.hardware_status.trend_prediction = trend_prediction
-        self.hardware_status.alerts = alerts
-        self.hardware_status.timestamp = timestamp
+        status = self.get_hardware_status(organization_id)
+        status.risk_score = risk_score
+        status.system_status = system_status
+        status.zone_status = zone_status
+        status.zone_data = zone_data
+        status.annotated_frames = annotated_frames
+        status.trend_prediction = trend_prediction
+        status.alerts = alerts
+        status.timestamp = timestamp
 
     def update_camera_snapshot(
         self,
         latest_annotated_frame: Optional[str],
         z1_people_count: int,
         timestamp: datetime,
+        organization_id: Optional[str] = None,
     ) -> None:
-        self.hardware_status.annotated_frames["zone-1"] = latest_annotated_frame
-        self.hardware_status.zone_data["zone-1"]["cam_people_count"] = z1_people_count
-        self.hardware_status.timestamp = timestamp
+        status = self.get_hardware_status(organization_id)
+        status.annotated_frames["zone-1"] = latest_annotated_frame
+        status.zone_data["zone-1"]["cam_people_count"] = z1_people_count
+        status.timestamp = timestamp
 
-    def get_recent_outputs(self, limit: int = 100) -> List[IntelligenceOutput]:
-        return list(self.outputs)[-limit:]
+    def get_recent_outputs(self, organization_id: Optional[str], limit: int = 100) -> List[IntelligenceOutput]:
+        outputs = self._get_outputs_queue(organization_id)
+        return list(outputs)[-limit:]
 
-    def get_recent_alerts(self, limit: int = 50) -> List[IntelligenceOutput]:
-        return list(self.alerts)[-limit:]
+    def get_recent_alerts(self, organization_id: Optional[str], limit: int = 50) -> List[IntelligenceOutput]:
+        alerts = self._get_alerts_queue(organization_id)
+        return list(alerts)[-limit:]
 
-    def reset(self) -> None:
-        """Clear all in-memory dashboard history and hardware snapshot."""
-        self.outputs.clear()
-        self.alerts.clear()
-        self.last_inference = None
-        self.hardware_status = HardwareStatus()
+    def get_last_inference(self, organization_id: Optional[str]) -> Optional[datetime]:
+        org_id = self._normalize_org(organization_id)
+        return self.last_inference_by_organization.get(org_id)
+
+    def reset(self, organization_id: Optional[str] = None) -> None:
+        """Clear in-memory dashboard history and hardware snapshot for one organization or all."""
+        if organization_id is None:
+            self.outputs_by_organization.clear()
+            self.alerts_by_organization.clear()
+            self.last_inference_by_organization.clear()
+            self.hardware_status_by_organization.clear()
+            return
+
+        org_id = self._normalize_org(organization_id)
+        self.outputs_by_organization.pop(org_id, None)
+        self.alerts_by_organization.pop(org_id, None)
+        self.last_inference_by_organization.pop(org_id, None)
+        self.hardware_status_by_organization.pop(org_id, None)
