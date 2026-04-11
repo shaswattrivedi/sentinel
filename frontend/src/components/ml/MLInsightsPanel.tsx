@@ -51,6 +51,7 @@ function buildShortWindowTrends(
     .filter((point) => Number.isFinite(point.ms))
     .sort((a, b) => a.ms - b.ms);
   const parsedAlerts = (alerts ?? [])
+    .filter((entry) => String(entry.severity).toLowerCase() === "critical")
     .map((entry) => Date.parse(entry.timestamp))
     .filter((ms) => Number.isFinite(ms))
     .sort((a, b) => a - b);
@@ -147,7 +148,7 @@ const ShortWindowTrendGrid: React.FC<{ trends: ShortWindowTrend[] }> = ({ trends
           </div>
           <div>
             <div style={{ color: "rgba(248, 250, 252, 0.5)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              No. of Alerts
+              Critical Alerts
             </div>
             <div style={{ color: getAlertColor(item.alertCount), fontWeight: 700, fontSize: 14, letterSpacing: "0.3px" }}>
               {formatAlertCount(item.alertCount)}

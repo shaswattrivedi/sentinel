@@ -236,6 +236,7 @@ const Analytics: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const load = async () => {
       setLoading(true);
@@ -267,8 +268,18 @@ const Analytics: React.FC = () => {
 
     void load();
 
+    const isTodaySelected = date === today();
+    if (source === "live" && isTodaySelected) {
+      intervalId = setInterval(() => {
+        void load();
+      }, 60 * 1000);
+    }
+
     return () => {
       cancelled = true;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
     };
   }, [date, filter, source]);
 

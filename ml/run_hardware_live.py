@@ -197,14 +197,20 @@ def run_loop() -> None:
         "ZONE_SENSOR_ENDPOINTS",
     )
     ml_service_url = os.getenv("ML_SERVICE_URL", DEFAULT_ML_SERVICE_URL)
+    target_org_id = (os.getenv("HARDWARE_TARGET_ORG_ID") or "").strip()
+    request_headers = {"x-organization-id": target_org_id} if target_org_id else {}
 
     print("[SENTINEL] Starting hardware live loop...")
     print(f"[SENTINEL] ML endpoint: {ml_service_url}")
     print(f"[SENTINEL] Zone streams: {zone_stream_urls}")
     print(f"[SENTINEL] Zone sensors: {zone_sensor_endpoints}")
+    if target_org_id:
+        print(f"[SENTINEL] Target organization: {target_org_id}")
+    else:
+        print("[SENTINEL] Target organization: default-org (set HARDWARE_TARGET_ORG_ID to override)")
 
     while True:
-        payload = {"timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")}
+        payload = {"timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
         annotated_frames = {}
 
         for zone_id, stream_url in zone_stream_urls.items():
@@ -231,7 +237,7 @@ def run_loop() -> None:
         payload["annotated_frames"] = annotated_frames
 
         try:
-            r = requests.post(ml_service_url, json=payload, timeout=3)
+            r = requests.post(ml_service_url, json=payload, timeout=3, headers=request_headers)
             system_status = "unknown"
             try:
                 body = r.json()
@@ -243,7 +249,7 @@ def run_loop() -> None:
         except requests.exceptions.ConnectionError:
             print(
                 f"[ML] Post error: cannot connect to {ml_service_url}. "
-                "Start ML API with: cd ml && source venv/bin/activate && python main.py"
+                "Start ML API with: cd ml && source .venv/bin/activate && python main.py"
             )
         except Exception as e:
             print(f"[ML] Post error: {e}")

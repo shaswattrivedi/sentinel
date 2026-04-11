@@ -1,6 +1,7 @@
 from functools import lru_cache
 import base64
 import json
+import os
 from typing import Optional
 
 from fastapi import Header, Request
@@ -10,6 +11,13 @@ from storage.in_memory import InMemoryStore
 
 
 DEFAULT_ORGANIZATION_ID = "default-org"
+DEMO_SHARED_ORG_ID = (os.getenv("DEMO_SHARED_ORG_ID", "demo-shared-org") or "demo-shared-org").strip()
+DEMO_BROADCAST_ALL_ORGS = (os.getenv("DEMO_BROADCAST_ALL_ORGS", "false") or "false").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 
 
 def _decode_token_payload(token: str) -> dict:
@@ -31,6 +39,9 @@ async def get_org_id(request: Request, x_organization_id: Optional[str] = Header
     explicit_org_id = (x_organization_id or "").strip()
     if explicit_org_id:
         return explicit_org_id
+
+    if DEMO_BROADCAST_ALL_ORGS:
+        return DEMO_SHARED_ORG_ID or DEFAULT_ORGANIZATION_ID
 
     auth_header = request.headers.get("authorization", "")
     if auth_header.lower().startswith("bearer "):

@@ -31,6 +31,13 @@ const SNAPSHOT_TIMEOUT_MS = 5000;
 const LIVE_FRESHNESS_WINDOW_MS = 15 * 60 * 1000;
 const DEFAULT_ORGANIZATION_ID = "default-org";
 
+const normalizeMlBaseUrl = (rawUrl: string): string => {
+  const trimmed = rawUrl.trim().replace(/\/+$/, "");
+  return trimmed.endsWith("/predict") ? trimmed.slice(0, -"/predict".length) : trimmed;
+};
+
+const ML_SERVICE_BASE_URL = normalizeMlBaseUrl(ML_SERVICE_URL);
+
 const alertCountBufferByOrganization = new Map<string, number>();
 let schedulerId: NodeJS.Timeout | null = null;
 let mlUnavailable = false;
@@ -61,7 +68,7 @@ export async function takeSnapshot(): Promise<void> {
     const organizationIds = await getKnownOrganizationIds();
 
     for (const organizationId of organizationIds) {
-      const { data } = await axios.get<MlDashboardSnapshot>(`${ML_SERVICE_URL}/dashboard/snapshot`, {
+      const { data } = await axios.get<MlDashboardSnapshot>(`${ML_SERVICE_BASE_URL}/dashboard/snapshot`, {
         timeout: SNAPSHOT_TIMEOUT_MS,
         headers: {
           "x-organization-id": organizationId
@@ -117,7 +124,7 @@ export async function takeSnapshot(): Promise<void> {
       if (isNetworkFailure) {
         if (!mlUnavailable) {
           console.warn(
-            `[Snapshot] ML service unavailable (${code}) at ${ML_SERVICE_URL}. ` +
+            `[Snapshot] ML service unavailable (${code}) at ${ML_SERVICE_BASE_URL}. ` +
               "Snapshots will retry automatically every 5 minutes."
           );
           mlUnavailable = true;

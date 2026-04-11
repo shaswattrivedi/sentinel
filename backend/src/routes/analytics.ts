@@ -1,3 +1,4 @@
+import axios from "axios";
 import { Router } from "express";
 import { authenticate } from "../middleware/auth.js";
 import { HttpError } from "../middleware/errorHandler.js";
@@ -62,6 +63,7 @@ type BucketStats = {
 type AggregatedDoc = {
   _id: {
     hour?: number;
+    minute?: number;
     year?: number;
     month?: number;
     day?: number;
@@ -77,10 +79,41 @@ type AggregatedDoc = {
   count: number;
 };
 
+type MlDashboardSnapshot = {
+  timestamp?: string | Date | null;
+  risk_score?: number;
+  system_status?: ZoneStatus;
+  zone_data?: {
+    "zone-1"?: {
+      cam_people_count?: number;
+      validation_score?: number;
+    };
+    "zone-2"?: {
+      cam_people_count?: number;
+      validation_score?: number;
+    };
+  };
+  zone_status?: {
+    "zone-1"?: ZoneStatus;
+    "zone-2"?: ZoneStatus;
+  };
+  trend_prediction?: {
+    trend?: TrendStatus;
+  };
+};
+
 export const router = Router();
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const LIVE_FRESHNESS_WINDOW_MS = 15 * 60 * 1000;
+const SNAPSHOT_TIMEOUT_MS = 5000;
+
+const normalizeMlBaseUrl = (rawUrl: string): string => {
+  const trimmed = rawUrl.trim().replace(/\/+$/, "");
+  return trimmed.endsWith("/predict") ? trimmed.slice(0, -"/predict".length) : trimmed;
+};
+
+const ML_SERVICE_BASE_URL = normalizeMlBaseUrl(process.env.ML_SERVICE_URL || "http://localhost:8000");
 
 const isFilterType = (value: string): value is FilterType => value === "daily" || value === "weekly" || value === "monthly";
 
@@ -282,15 +315,72 @@ const formatDateKey = (parsedDate: ParsedDate): string => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
-const isBaselineLivePoint = (point: SnapshotPoint): boolean =>
-  point.risk_score === 0 &&
-  point.system_status === "SAFE" &&
-  point.zone_1_people === 0 &&
-  point.zone_2_people === 0 &&
-  point.zone_1_validation === 0 &&
-  point.zone_2_validation === 0 &&
-  point.alert_count === 0 &&
-  point.trend === "STABLE";
+const isSelectedUtcToday = (startDate: Date, filter: FilterType): boolean => {
+  if (filter !== "daily") return false;
+  const now = new Date();
+  return (
+    now.getUTCFullYear() === startDate.getUTCFullYear() &&
+    now.getUTCMonth() === startDate.getUTCMonth() &&
+    now.getUTCDate() === startDate.getUTCDate()
+  );
+};
+
+const persistLatestLiveSnapshot = async (organizationId: string): Promise<void> => {
+  try {
+    const { data } = await axios.get<MlDashboardSnapshot>(`${ML_SERVICE_BASE_URL}/dashboard/snapshot`, {
+      timeout: SNAPSHOT_TIMEOUT_MS,
+      headers: {
+        "x-organization-id": organizationId
+      }
+    });
+
+    const sourceTimestamp = data.timestamp ? new Date(data.timestamp) : undefined;
+    if (!sourceTimestamp || Number.isNaN(sourceTimestamp.getTime())) {
+      return;
+    }
+
+    if (Date.now() - sourceTimestamp.getTime() > LIVE_FRESHNESS_WINDOW_MS) {
+      return;
+    }
+
+    const existing = await AnalyticsSnapshot.findOne({
+      organizationId,
+      dataSource: "live",
+      timestamp: sourceTimestamp
+    })
+      .select({ _id: 1 })
+      .lean();
+
+    if (existing) {
+      return;
+    }
+
+    await AnalyticsSnapshot.create({
+      organizationId,
+      dataSource: "live",
+      timestamp: sourceTimestamp,
+      risk_score: data.risk_score ?? 0,
+      system_status: data.system_status ?? "SAFE",
+      zone_1: {
+        cam_people_count: data.zone_data?.["zone-1"]?.cam_people_count ?? 0,
+        validation_score: data.zone_data?.["zone-1"]?.validation_score ?? 0,
+        zone_status: data.zone_status?.["zone-1"] ?? "SAFE"
+      },
+      zone_2: {
+        cam_people_count: data.zone_data?.["zone-2"]?.cam_people_count ?? 0,
+        validation_score: data.zone_data?.["zone-2"]?.validation_score ?? 0,
+        zone_status: data.zone_status?.["zone-2"] ?? "SAFE"
+      },
+      trend: data.trend_prediction?.trend ?? "STABLE",
+      alert_count: 0
+    });
+  } catch (error) {
+    // Fallback persistence should never fail the analytics response path.
+    if (axios.isAxiosError(error)) {
+      return;
+    }
+  }
+};
 
 const generateInsight = (summary: SnapshotSummary, filter: FilterType): string => {
   const peak = summary.peak_time ? new Date(summary.peak_time).toLocaleString() : "N/A";
@@ -333,6 +423,10 @@ const loadAnalytics = async (
 
   if (sourceFilter === "live" || sourceFilter === "seed") {
     matchStage.dataSource = sourceFilter;
+  }
+
+  if (sourceFilter !== "seed" && isSelectedUtcToday(startDate, filter)) {
+    await persistLatestLiveSnapshot(organizationId);
   }
 
   if (sourceFilter === "live" && filter === "daily") {
@@ -378,7 +472,10 @@ const loadAnalytics = async (
   }
 
   const groupId = filter === "daily"
-    ? { hour: { $hour: "$timestamp" } }
+    ? {
+        hour: { $hour: "$timestamp" },
+        minute: { $minute: "$timestamp" }
+      }
     : {
         year: { $year: "$timestamp" },
         month: { $month: "$timestamp" },
@@ -405,18 +502,18 @@ const loadAnalytics = async (
     {
       $sort:
         filter === "daily"
-          ? { "_id.hour": 1 }
+          ? { "_id.hour": 1, "_id.minute": 1 }
           : { "_id.year": 1, "_id.month": 1, "_id.day": 1 }
     }
   ]);
 
   const data = docs.map((doc): SnapshotPoint => {
     const label = filter === "daily"
-      ? String(doc._id.hour ?? 0).padStart(2, "0") + ":00"
+      ? `${String(doc._id.hour ?? 0).padStart(2, "0")}:${String(doc._id.minute ?? 0).padStart(2, "0")}`
       : `${doc._id.year}-${String(doc._id.month).padStart(2, "0")}-${String(doc._id.day).padStart(2, "0")}`;
 
     const timestamp = filter === "daily"
-      ? new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate(), doc._id.hour ?? 0, 0, 0, 0)).toISOString()
+      ? new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate(), doc._id.hour ?? 0, doc._id.minute ?? 0, 0, 0)).toISOString()
       : new Date(Date.UTC(doc._id.year ?? 1970, (doc._id.month ?? 1) - 1, doc._id.day ?? 1, 0, 0, 0, 0)).toISOString();
 
     return {
@@ -432,16 +529,6 @@ const loadAnalytics = async (
       trend: doc.trend ?? "STABLE"
     };
   });
-
-  if (sourceFilter === "live" && data.length > 0 && data.every(isBaselineLivePoint)) {
-    return {
-      filter,
-      source: sourceFilter,
-      date: dateKey,
-      data: [] as SnapshotPoint[],
-      summary: buildSummary([])
-    };
-  }
 
   const summary = buildSummary(data);
 
