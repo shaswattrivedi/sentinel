@@ -88,8 +88,38 @@ class InMemoryStore:
         status.risk_score = risk_score
         status.system_status = system_status
         status.zone_status = zone_status
-        status.zone_data = zone_data
-        status.annotated_frames = annotated_frames
+
+        # Merge incoming zone data with previous values so partial payloads don't reset dashboard tiles.
+        previous_zone_data = status.zone_data if isinstance(status.zone_data, dict) else {}
+        incoming_zone_data = zone_data if isinstance(zone_data, dict) else {}
+        merged_zone_data: Dict[str, Dict[str, Any]] = {}
+        for zone_id in sorted(set(previous_zone_data.keys()) | set(incoming_zone_data.keys())):
+            prev_zone = previous_zone_data.get(zone_id, {})
+            next_zone = incoming_zone_data.get(zone_id, {})
+
+            prev_zone_dict = prev_zone if isinstance(prev_zone, dict) else {}
+            next_zone_dict = next_zone if isinstance(next_zone, dict) else {}
+            merged_zone = dict(prev_zone_dict)
+            for key, value in next_zone_dict.items():
+                if value is not None:
+                    merged_zone[key] = value
+            merged_zone_data[zone_id] = merged_zone
+        if merged_zone_data:
+            status.zone_data = merged_zone_data
+
+        # Preserve last good frame if producer sends null/missing frame during transient network issues.
+        previous_frames = status.annotated_frames if isinstance(status.annotated_frames, dict) else {}
+        incoming_frames = annotated_frames if isinstance(annotated_frames, dict) else {}
+        merged_frames: Dict[str, Optional[str]] = dict(previous_frames)
+        for zone_id in sorted(set(previous_frames.keys()) | set(incoming_frames.keys())):
+            incoming_frame = incoming_frames.get(zone_id)
+            if isinstance(incoming_frame, str) and incoming_frame:
+                merged_frames[zone_id] = incoming_frame
+            elif zone_id not in merged_frames:
+                merged_frames[zone_id] = None
+        if merged_frames:
+            status.annotated_frames = merged_frames
+
         status.trend_prediction = trend_prediction
         status.alerts = alerts
         status.timestamp = timestamp

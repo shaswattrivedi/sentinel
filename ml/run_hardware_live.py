@@ -117,21 +117,33 @@ def _score_candidate_urls(sensor_endpoint: str) -> list[str]:
 
 
 def grab_frame(stream_url: str) -> np.ndarray | None:
-    """Pull one JPEG frame from the ESP32-CAM MJPEG stream."""
+    """Pull one JPEG frame with a strict anti-hang timeout."""
+    start_time = time.time()
     try:
-        stream = requests.get(stream_url, stream=True, timeout=3)
+        # timeout=(1.5, 1.5) sets a 1.5s limit on BOTH connection and reading data
+        stream = requests.get(stream_url, stream=True, timeout=(1.5, 1.5))
         bytes_buf = b""
-        for chunk in stream.iter_content(chunk_size=1024):
+        
+        for chunk in stream.iter_content(chunk_size=2048):
+            # THE KILL SWITCH: If fetching this frame takes more than 1.5 seconds, abort instantly!
+            if time.time() - start_time > 1.5:
+                stream.close()
+                return None
+                
             bytes_buf += chunk
             a = bytes_buf.find(b"\xff\xd8")
             b = bytes_buf.find(b"\xff\xd9")
+            
             if a != -1 and b != -1:
                 jpg = bytes_buf[a : b + 2]
-                bytes_buf = bytes_buf[b + 2 :]
                 frame = cv2.imdecode(np.frombuffer(jpg, np.uint8), cv2.IMREAD_COLOR)
+                stream.close() # Cleanly close the connection
                 return frame
-    except Exception as e:
-        print(f"[{stream_url}] Frame grab error: {e}")
+                
+    except Exception:
+        # Silently fail so the main loop can immediately trigger the fallback cache
+        pass
+        
     return None
 
 
@@ -209,6 +221,12 @@ def run_loop() -> None:
     else:
         print("[SENTINEL] Target organization: default-org (set HARDWARE_TARGET_ORG_ID to override)")
 
+    # --- NEW: State trackers for hotspot network bypass ---
+    zone_ids = list(zone_stream_urls.keys())
+    last_known_frames = {zone_id: None for zone_id in zone_ids}
+    last_known_counts = {zone_id: 0 for zone_id in zone_ids}
+    last_known_confs = {zone_id: 0.0 for zone_id in zone_ids}
+
     while True:
         payload = {"timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
         annotated_frames = {}
@@ -219,14 +237,24 @@ def run_loop() -> None:
             validation_score = get_validation_score(sensor_endpoint, zone_id)
 
             if frame is not None:
+                # SUCCESS: Process frame and update the cache
                 count, conf, b64 = count_and_annotate(frame)
+
+                last_known_frames[zone_id] = b64
+                last_known_counts[zone_id] = count
+                last_known_confs[zone_id] = conf
+
                 annotated_frames[zone_id] = b64
-                if validation_score <= 0.0:
-                    # Fallback when hardware /score endpoint is unavailable.
-                    validation_score = round(max(0.0, min(100.0, conf * 100.0)), 2)
             else:
-                count, conf = 0, 0.0
-                annotated_frames[zone_id] = None
+                # NETWORK DROP DETECTED: Fallback to the last known good data
+                annotated_frames[zone_id] = last_known_frames.get(zone_id)
+                count = last_known_counts.get(zone_id, 0)
+                conf = last_known_confs.get(zone_id, 0.0)
+
+            # Calculate validation score regardless of frame drop
+            if validation_score <= 0.0:
+                # Fallback when hardware /score endpoint is unavailable.
+                validation_score = round(max(0.0, min(100.0, conf * 100.0)), 2)
 
             payload[zone_id] = {
                 "cam_people_count": count,

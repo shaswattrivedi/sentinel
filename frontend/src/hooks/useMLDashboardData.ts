@@ -87,13 +87,25 @@ export const useMLDashboardData = (pollIntervalMs = 1500) => {
     const snapshot = await getDashboardSnapshot();
     const normalizedSnapshot = normalizeSnapshot(snapshot);
 
-    setState((prev) => ({
-      ...prev,
-      ...normalizedSnapshot,
-      hardware: normalizedSnapshot,
-      isLoading: false,
-      error: null,
-    }));
+    setState((prev) => {
+      const stableFrames: HardwareStatusResponse["annotated_frames"] = {
+        "zone-1": normalizedSnapshot.annotated_frames["zone-1"] ?? prev.annotated_frames["zone-1"],
+        "zone-2": normalizedSnapshot.annotated_frames["zone-2"] ?? prev.annotated_frames["zone-2"],
+      };
+
+      const stableSnapshot: HardwareStatusResponse = {
+        ...normalizedSnapshot,
+        annotated_frames: stableFrames,
+      };
+
+      return {
+        ...prev,
+        ...stableSnapshot,
+        hardware: stableSnapshot,
+        isLoading: false,
+        error: null,
+      };
+    });
   }, []);
 
   const fetchSupportingData = useCallback(async () => {
