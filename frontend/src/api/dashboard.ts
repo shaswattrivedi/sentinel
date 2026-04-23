@@ -86,7 +86,7 @@ export const getTimeline = async (): Promise<TimelinePoint[]> => {
   return asArray<BackendTimelinePoint>(res.data?.points).map((p) => ({
     timestamp: p.timestamp,
     riskScore: p.risk_score,
-    densityLevel: toRiskLevel(p.density_level)
+    densityLevel: toRiskLevel(p.risk_level)
   }));
 };
 

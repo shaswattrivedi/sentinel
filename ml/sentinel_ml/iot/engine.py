@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, Optional
@@ -32,16 +33,79 @@ class IoTRiskEngine:
         self._last_timestamp: Optional[datetime] = None
         self._last_avg_zone_risk: Optional[float] = None
 
+        # Tunable thresholds for occupancy-heavy deployments.
+        self._safe_max_score = float(os.getenv("IOT_SAFE_MAX_SCORE", "40"))
+        self._moderate_max_score = float(os.getenv("IOT_MODERATE_MAX_SCORE", "75"))
+        self._moderate_cam_people_threshold = int(os.getenv("IOT_MODERATE_CAM_COUNT", "4"))
+        self._critical_cam_people_threshold = int(os.getenv("IOT_CRITICAL_CAM_COUNT", "8"))
+
     @staticmethod
     def _clip(value: float, lo: float, hi: float) -> float:
         return max(lo, min(hi, value))
 
     def _status_from_score(self, score: float) -> str:
-        if score > 75:
+        if score > self._moderate_max_score:
             return CRITICAL
-        if score > 40:
+        if score > self._safe_max_score:
             return MODERATE
         return SAFE
+
+    def _zone_status(
+        self,
+        cam_people_count: int,
+        camera_score: float,
+        sensor_score: float,
+        zone_risk: float,
+    ) -> str:
+        """Balanced hybrid: weighted fusion is primary, with guarded multi-signal escalation."""
+        base_status = self._status_from_score(zone_risk)
+
+        cam_moderate = (
+            cam_people_count >= self._moderate_cam_people_threshold
+            or camera_score > self._safe_max_score
+        )
+        sensor_moderate = sensor_score > self._safe_max_score
+
+        cam_critical = (
+            cam_people_count >= self._critical_cam_people_threshold
+            or camera_score > self._moderate_max_score
+        )
+        sensor_critical = sensor_score > self._moderate_max_score
+
+        # If weighted fusion already says MODERATE/CRITICAL, trust it.
+        if base_status == CRITICAL:
+            return CRITICAL
+        if base_status == MODERATE:
+            # Escalate to CRITICAL only when both signals independently look critical.
+            return CRITICAL if (cam_critical and sensor_critical) else MODERATE
+
+        # Weighted SAFE: either signal can promote to MODERATE.
+        if cam_moderate or sensor_moderate:
+            return MODERATE
+
+        return SAFE
+
+    def _apply_risk_score_floor(self, risk_score: float, system_status: str) -> float:
+        """Keep score/status coherent while preserving weighted-signal variation."""
+        score = self._clip(float(risk_score), 0.0, 100.0)
+
+        if system_status == CRITICAL:
+            if score > self._moderate_max_score:
+                return score
+            # Nudge into the critical band with minimal distortion.
+            src_max = max(self._moderate_max_score, 1.0)
+            t = self._clip(score / src_max, 0.0, 1.0)
+            return (self._moderate_max_score + 1.0) + (t * 8.0)
+
+        if system_status == MODERATE:
+            if score > self._safe_max_score:
+                return score
+            # Nudge into moderate band with minimal distortion.
+            src_max = max(self._safe_max_score, 1.0)
+            t = self._clip(score / src_max, 0.0, 1.0)
+            return (self._safe_max_score + 1.0) + (t * 5.0)
+
+        return score
 
     def _master_status(self, zone_status: Dict[str, str]) -> str:
         if any(status == CRITICAL for status in zone_status.values()):
@@ -143,14 +207,25 @@ class IoTRiskEngine:
         risk_parts = self._compute_risk_score(zone_1.zone_risk, zone_2.zone_risk)
 
         zone_status = {
-            "zone-1": self._status_from_score(zone_1.zone_risk),
-            "zone-2": self._status_from_score(zone_2.zone_risk),
+            "zone-1": self._zone_status(
+                cam_people_count=zone_1_cam_people_count,
+                camera_score=zone_1.camera_score,
+                sensor_score=zone_1.sensor_score,
+                zone_risk=zone_1.zone_risk,
+            ),
+            "zone-2": self._zone_status(
+                cam_people_count=zone_2_cam_people_count,
+                camera_score=zone_2.camera_score,
+                sensor_score=zone_2.sensor_score,
+                zone_risk=zone_2.zone_risk,
+            ),
         }
         system_status = self._master_status(zone_status)
+        risk_score = self._apply_risk_score_floor(risk_parts["risk_score"], system_status)
         trend_prediction = self._compute_trend_prediction(ts, risk_parts["avg_zone_risk"])
 
         return {
-            "risk_score": risk_parts["risk_score"],
+            "risk_score": round(risk_score, 2),
             "system_status": system_status,
             "zone_status": zone_status,
             "reason": self._build_reason(

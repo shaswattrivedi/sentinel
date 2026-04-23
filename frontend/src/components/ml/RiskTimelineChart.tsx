@@ -16,6 +16,8 @@ type Props = {
 export const RiskTimelineChart: React.FC<Props> = ({ data, loading }) => {
   const points = data ?? [];
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const autoFollowRef = React.useRef(true);
   const [chartHeight, setChartHeight] = React.useState(260);
 
   React.useEffect(() => {
@@ -29,6 +31,25 @@ export const RiskTimelineChart: React.FC<Props> = ({ data, loading }) => {
     observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, []);
+
+  React.useEffect(() => {
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+
+    const onScroll = () => {
+      const distanceFromRight = scroller.scrollWidth - (scroller.scrollLeft + scroller.clientWidth);
+      autoFollowRef.current = distanceFromRight < 40;
+    };
+
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => scroller.removeEventListener("scroll", onScroll);
+  }, []);
+
+  React.useEffect(() => {
+    const scroller = scrollRef.current;
+    if (!scroller || !autoFollowRef.current) return;
+    scroller.scrollLeft = scroller.scrollWidth;
+  }, [points.length]);
 
   const domain = useMemo(() => {
     if (!points.length) return { min: 0, max: 100 };
@@ -103,7 +124,7 @@ export const RiskTimelineChart: React.FC<Props> = ({ data, loading }) => {
           <Legend color={levelColor.HIGH} label="High" />
         </div>
       </div>
-      <div style={{ flex: 1, overflowX: "auto", overflowY: "hidden", scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.1) transparent", position: "relative" }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowX: "auto", overflowY: "hidden", scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.1) transparent", position: "relative" }}>
         <svg width={width} height={HEIGHT} style={{ display: "block", minWidth: "100%" }}>
           <defs>
             <filter id="glow-low" x="-50%" y="-50%" width="200%" height="200%">
@@ -138,7 +159,7 @@ export const RiskTimelineChart: React.FC<Props> = ({ data, loading }) => {
                 filter={`url(#${filterId})`}
               >
                 <title>
-                  {new Date(p.timestamp).toLocaleString()}\nRisk: {p.riskScore}\nDensity: {p.densityLevel}
+                  {new Date(p.timestamp).toLocaleString()}\nRisk: {p.riskScore}\nLevel: {p.densityLevel}
                 </title>
               </circle>
             );
@@ -151,7 +172,7 @@ export const RiskTimelineChart: React.FC<Props> = ({ data, loading }) => {
           INTERPRETATION
         </div>
         <div style={{ color: "rgba(248, 250, 252, 0.9)", fontSize: 15, lineHeight: 1.45 }}>
-          Blue line measures the real-time Fusion Risk Score (0-100). Dots highlight density states (Safe, Moderate, Critical). High crests matching red dots require rapid diversion.
+          Blue line measures the real-time Fusion Risk Score (0-100). Dots highlight risk levels (Safe, Moderate, Critical). High crests matching red dots require rapid diversion.
         </div>
       </div>
     </div>
